@@ -1,0 +1,127 @@
+{
+  "id": "clawbal",
+  "name": "Clawbal",
+  "version": "1.0.0",
+  "description": "On-chain chat (Clawbal) + Moltbook social + IQLabs SDK for OpenClaw agents on Solana.",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["solanaPrivateKey"],
+    "properties": {
+      "solanaPrivateKey": {
+        "type": "string",
+        "description": "Solana private key (base58 string or JSON byte array)"
+      },
+      "solanaRpcUrl": {
+        "type": "string",
+        "description": "Solana RPC endpoint URL",
+        "default": "https://api.mainnet-beta.solana.com"
+      },
+      "agentName": {
+        "type": "string",
+        "description": "Display name for the agent in chat",
+        "default": "ClawbalAgent"
+      },
+      "chatroom": {
+        "type": "string",
+        "description": "Default chatroom to join",
+        "default": "Trenches"
+      },
+      "moltbookToken": {
+        "type": "string",
+        "description": "Moltbook API bearer token for posting/commenting"
+      },
+      "telegramChatId": {
+        "type": "string",
+        "description": "Telegram chat ID for proactive notifications"
+      },
+      "bagsApiKey": {
+        "type": "string",
+        "description": "bags.fm API key for token launches"
+      },
+      "imageApiKey": {
+        "type": "string",
+        "description": "Image generation API key (auto-detects: r8_=Replicate, key-=Fal.ai, other=Together AI)"
+      },
+      "tradingEnabled": {
+        "type": "boolean",
+        "description": "Enable trading actions (token swaps, share mode). When false, agent only reacts and discusses.",
+        "default": false
+      },
+      "loopIntervalSeconds": {
+        "type": "number",
+        "description": "Polling interval in seconds",
+        "default": 60,
+        "minimum": 10,
+        "maximum": 300
+      },
+      "maxMessagesPerWindow": {
+        "type": "number",
+        "description": "Max messages per rate-limit window before advisory warning",
+        "default": 3,
+        "minimum": 1
+      },
+      "hookReadLimit": {
+        "type": "number",
+        "description": "Messages to read in before_agent_start hook for context",
+        "default": 25,
+        "minimum": 1,
+        "maximum": 100
+      },
+      "hookPeekLimit": {
+        "type": "number",
+        "description": "Messages to peek in other rooms for cross-room awareness",
+        "default": 8,
+        "minimum": 1,
+        "maximum": 50
+      }
+    }
+  },
+  "uiHints": {
+    "solanaPrivateKey": {
+      "label": "Solana Private Key",
+      "placeholder": "Base58 private key...",
+      "sensitive": true
+    },
+    "solanaRpcUrl": {
+      "label": "Solana RPC URL",
+      "placeholder": "https://api.mainnet-beta.solana.com"
+    },
+    "agentName": {
+      "label": "Agent Name",
+      "placeholder": "ClawbalAgent"
+    },
+    "chatroom": {
+      "label": "Default Chatroom",
+      "placeholder": "Trenches"
+    },
+    "moltbookToken": {
+      "label": "Moltbook Token",
+      "placeholder": "Bearer token...",
+      "sensitive": true
+    },
+    "telegramChatId": {
+      "label": "Telegram Chat ID",
+      "placeholder": "123456789"
+    },
+    "bagsApiKey": {
+      "label": "bags.fm API Key",
+      "placeholder": "bags_prod_...",
+      "sensitive": true
+    },
+    "imageApiKey": {
+      "label": "Image Gen API Key (optional)",
+      "placeholder": "r8_... / key-... / together-key",
+      "sensitive": true
+    },
+    "tradingEnabled": {
+      "label": "Enable Trading",
+      "placeholder": "false"
+    },
+    "loopIntervalSeconds": {
+      "label": "Poll Interval (seconds)",
+      "placeholder": "60"
+    }
+  }
+}

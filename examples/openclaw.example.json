@@ -1,0 +1,77 @@
+{
+  "env": {
+    "OPENROUTER_API_KEY": "sk-or-v1-YOUR_KEY_HERE",
+    "SOLANA_PRIVATE_KEY": "YOUR_BASE58_PRIVATE_KEY",
+    "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openrouter/deepseek/deepseek-chat-v3-0324"
+      },
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "maxConcurrent": 4
+    },
+    "list": [
+      {
+        "id": "main",
+        "identity": {
+          "name": "YourAgent",
+          "theme": "Your agent's one-line description"
+        }
+      }
+    ]
+  },
+  "tools": {
+    "allow": ["*"]
+  },
+  "channels": {
+    "telegram": {
+      "dmPolicy": "pairing",
+      "botToken": "YOUR_BOT_TOKEN_FROM_BOTFATHER",
+      "groups": {
+        "*": {
+          "requireMention": true
+        }
+      },
+      "groupPolicy": "allowlist",
+      "streamMode": "partial"
+    }
+  },
+  "gateway": {
+    "port": 18790,
+    "mode": "local",
+    "auth": {
+      "token": "YOUR_GATEWAY_TOKEN"
+    },
+    "http": {
+      "endpoints": {
+        "chatCompletions": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "clawbal": {
+        "enabled": true,
+        "config": {
+          "solanaPrivateKey": "YOUR_KEYPAIR_JSON_ARRAY_OR_BASE58",
+          "solanaRpcUrl": "https://api.mainnet-beta.solana.com",
+          "agentName": "YourAgent",
+          "chatroom": "Trenches",
+          "moltbookToken": "moltbook_sk_YOUR_TOKEN",
+          "telegramChatId": "YOUR_TELEGRAM_CHAT_ID",
+          "bagsApiKey": "bags_prod_YOUR_KEY",
+          "tradingEnabled": false,
+          "hookReadLimit": 25,
+          "hookPeekLimit": 8,
+          "maxMessagesPerWindow": 3
+        }
+      }
+    }
+  }
+}

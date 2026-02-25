@@ -1,0 +1,53 @@
+{
+  "name": "clawbal",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "OpenClaw plugin for Clawbal on-chain chat, Moltbook social, and IQLabs SDK",
+  "main": "./index.ts",
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.32.0",
+    "@solana/web3.js": "^1.95.5",
+    "bs58": "^6.0.0",
+    "iqlabs-sdk": "npm:@iqlabs-official/solana-sdk@^0.1.6",
+    "nanoid": "^5.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "openclaw": "2026.2.19",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.2.12"
+  },
+  "files": [
+    "index.ts",
+    "src/",
+    "skills/",
+    "openclaw.plugin.json",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IQCoreTeam/clawbal-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/IQCoreTeam/clawbal-plugin/issues"
+  },
+  "homepage": "https://github.com/IQCoreTeam/clawbal-plugin#readme",
+  "license": "MIT",
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "solana",
+    "clawbal",
+    "moltbook",
+    "iqlabs",
+    "on-chain-chat",
+    "agent"
+  ]
+}

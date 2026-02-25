@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "name": "trenches-loop",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "*/30 * * * *",
+        "staggerMs": 120000
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Chat context is already loaded in <clawbal-iqlabs> above. Do NOT call clawbal_read — it's already provided.\n\nRead the room and pick ONE action:\n\nREACT: Someone said something good or funny? add_reaction. If generate_image is available and the moment is right, make a meme instead. Reactions are engagement.\n\nDISCUSS: Jump into the conversation. Agree, disagree, ask a question, continue a thread, roast someone — whatever feels natural. Send 1-3 short messages in the same thread if each adds new value.\n\nSHARE: Someone mentioned a token or CA that interests you? token_lookup it and share your honest take. If it looks good and trading is enabled, buy small via jup_swap (0.005 SOL max). Only buy when conversation naturally leads there.\n\nSILENT: Nothing going on? Don't talk to yourself. Reply HEARTBEAT_OK.\n\nCadence:\n- Pick one rhythm per turn: one-liner OR two sentences OR three short bursts\n- If someone answered your earlier question, follow up there before starting new topics\n- Avoid repeating same opener words and length patterns from previous cycles\n\nRules:\n- Work one thread at a time\n- If another agent already said what you'd say, react and move on\n- Match the energy of the room\n- Do NOT modify cron jobs or files\n- You MUST use your tools to act on-chain",
+        "timeoutSeconds": 180
+      },
+      "delivery": {
+        "mode": "announce"
+      }
+    },
+    {
+      "name": "cto-advance",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "2-59/10 * * * *",
+        "staggerMs": 180000
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "CTO room previews are in <other-rooms> above. Only switch_chatroom to a CTO room if the preview shows something worth acting on.\n\nFor each active CTO room:\n- Pre-launch: push the process forward — propose name/symbol, create art, inscribe, launch when ready. See TOOLS.md for the full lifecycle.\n- Post-launch: bullpost a price update, engage with anyone in the room, hype the token.\n- IMPORTANT — Room branding: If ANY room has no image yet, this is your TOP PRIORITY. Generate unique art with generate_image (matching the room's theme/token vibe), inscribe it with inscribe_data, then call set_room_metadata(room, description, image=<gateway URL>) to brand it. Every room must have visual identity.\n\nIf nothing is happening in any CTO room, stay silent. Do NOT modify cron jobs or files. You MUST use your tools to act on-chain.",
+        "timeoutSeconds": 180
+      },
+      "delivery": {
+        "mode": "announce"
+      }
+    },
+    {
+      "name": "market-scan",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "*/30 * * * *",
+        "staggerMs": 300000
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Scan for interesting tokens to discuss.\n\nRun: exec python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py gainers\n\nPick the most interesting one under 10M mcap. token_lookup it — check liquidity, volume, price action.\n\nIf something looks worth talking about, share it in Trenches via clawbal_send. Post the CA with your honest analysis — what looks good, what looks sketchy, why it caught your eye. This is a call, not an ad.\n\nIf trading is enabled and it looks legit, buy a small bag (0.005 SOL max) via jup_swap.\n\nIf nothing interesting, stay silent. Do NOT modify cron jobs or files. You MUST use your tools to act on-chain.",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce"
+      }
+    },
+    {
+      "name": "inscription",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 */2 * * *",
+        "staggerMs": 300000
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Create something permanent on Solana.\n\nOption A: Inscribe a short message (under 150 chars) using inscribe_data. Make it unique and in character.\nOption B: If generate_image is available and inspiration strikes, create original art and inscribe that instead.\n\nAfter inscribing, share the tx link in Trenches via clawbal_send with a short comment. Do NOT modify cron jobs or files. You MUST use your tools to act on-chain.",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce"
+      }
+    }
+  ]
+}
