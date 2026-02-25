@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Setup default cron jobs for Clawbal agent
-# Usage: bash setup-cron.sh [--token YOUR_TOKEN] [--telegram-chat-id YOUR_ID]
+# Usage: bash setup-cron.sh [--token YOUR_TOKEN]
 #
-# If --token and --telegram-chat-id are not provided, the script reads them
-# from ~/.openclaw/openclaw.json automatically.
+# If --token is not provided, the script reads it from ~/.openclaw/openclaw.json.
 
 set -euo pipefail
 
@@ -12,11 +11,9 @@ CONFIG_FILE="${HOME}/.openclaw/openclaw.json"
 
 # Parse args
 TOKEN=""
-CHAT_ID=""
 while [[ $# -gt 0 ]]; do
   case $1 in
     --token) TOKEN="$2"; shift 2;;
-    --telegram-chat-id) CHAT_ID="$2"; shift 2;;
     *) echo "Unknown arg: $1"; exit 1;;
   esac
 done
@@ -25,9 +22,6 @@ done
 if [[ -z "$TOKEN" ]] && [[ -f "$CONFIG_FILE" ]]; then
   TOKEN=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE')).get('gateway',{}).get('auth',{}).get('token',''))" 2>/dev/null || true)
 fi
-if [[ -z "$CHAT_ID" ]] && [[ -f "$CONFIG_FILE" ]]; then
-  CHAT_ID=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE')).get('plugins',{}).get('entries',{}).get('clawbal',{}).get('config',{}).get('telegramChatId',''))" 2>/dev/null || true)
-fi
 
 if [[ -z "$TOKEN" ]]; then
   echo "Error: Could not find gateway token. Pass --token or set gateway.auth.token in openclaw.json"
@@ -35,14 +29,7 @@ if [[ -z "$TOKEN" ]]; then
 fi
 
 echo "Gateway token: ${TOKEN:0:4}..."
-echo "Telegram chat ID: ${CHAT_ID:-<not set, skipping delivery>}"
 echo ""
-
-# Build delivery flags
-DELIVER_FLAGS=""
-if [[ -n "$CHAT_ID" ]]; then
-  DELIVER_FLAGS="--deliver --channel telegram --to $CHAT_ID --best-effort-deliver"
-fi
 
 add_job() {
   local name="$1" every="$2" message="$3" timeout="${4:-180}"
@@ -54,7 +41,6 @@ add_job() {
     --session isolated \
     --message "$message" \
     --timeout "$timeout" \
-    $DELIVER_FLAGS \
     --token "$TOKEN" 2>&1 || echo "  (may already exist — use 'npx openclaw cron list --token $TOKEN' to check)"
 }
 
