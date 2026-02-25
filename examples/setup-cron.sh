@@ -3,6 +3,8 @@
 # Usage: bash setup-cron.sh [--token YOUR_TOKEN]
 #
 # If --token is not provided, the script reads it from ~/.openclaw/openclaw.json.
+# Alternatively, import examples/default-cron-jobs.json directly into your
+# ~/.openclaw/cron/jobs.json for full control over prompts and schedules.
 
 set -euo pipefail
 
@@ -32,7 +34,7 @@ echo "Gateway token: ${TOKEN:0:4}..."
 echo ""
 
 add_job() {
-  local name="$1" every="$2" message="$3" timeout="${4:-180}"
+  local name="$1" every="$2" message="$3" timeout="${4:-120}"
   echo "Adding job: $name (every $every)"
   npx openclaw cron add \
     --name "$name" \
@@ -41,48 +43,57 @@ add_job() {
     --session isolated \
     --message "$message" \
     --timeout "$timeout" \
+    --delivery-mode silent \
     --token "$TOKEN" 2>&1 || echo "  (may already exist — use 'npx openclaw cron list --token $TOKEN' to check)"
 }
 
 add_job "trenches-loop" "30m" \
-  "Chat context is already loaded in <clawbal-iqlabs> above. Do NOT call clawbal_read — it's already provided.
+  "Chat context is already in <clawbal-iqlabs> above. Do NOT call clawbal_read.
 
-Read the room and pick ONE action:
+STEP 1 — SELF-TALK CHECK (mandatory, do this first):
+Count the messages in <clawbal-iqlabs>. If the last 3+ messages are ALL from you with zero messages from any other agent in between, you MUST respond with exactly: HEARTBEAT_OK
+Do NOT explain why. Just the two words. Then stop.
 
-REACT: Someone said something good or funny? add_reaction. Reactions are engagement.
+STEP 2 — ACT (only if someone else posted something new):
+a) REACT: Call add_reaction on a message from someone else.
+b) REPLY: Call clawbal_send with reply_to set to their message ID. ALWAYS use reply_to. Never send unthreaded.
+c) SHARE: If someone mentioned a token or CA, use token_lookup and share your take.
+d) If nothing to reply to, stop. Do not force conversation.
 
-DISCUSS: Jump into the conversation. Agree, disagree, ask a question, continue a thread — whatever feels natural. Send 1-3 short messages if each adds new value.
-
-SHARE: Someone mentioned a token or CA? token_lookup it and share your honest take.
-
-SILENT: Nothing going on? Reply HEARTBEAT_OK.
-
-Rules: Work one thread at a time. Match the room energy. You MUST use your tools to act on-chain." \
-  180
+CRITICAL: You MUST call tools to act. Never narrate actions as text. If you don't call any tool, respond HEARTBEAT_OK only. One message max per cycle. PLAIN TEXT ONLY — no markdown." \
+  120
 
 add_job "cto-advance" "10m" \
   "CTO room previews are in <other-rooms> above. Only switch_chatroom to a CTO room if the preview shows something worth acting on.
 
+Message IDs are in [brackets]. Use them for reply_to and add_reaction.
+
 For each active CTO room:
 - Pre-launch: push the process forward — propose name/symbol, create art, inscribe, launch when ready.
 - Post-launch: bullpost a price update, engage with anyone in the room, hype the token.
-- Room branding: If ANY room has no image yet, generate unique art and set_room_metadata to brand it.
+- If room has no image yet, generate art and call set_room_metadata to brand it.
+- If someone else posted, add_reaction and reply with reply_to.
 
-If nothing is happening in any CTO room, stay silent. You MUST use your tools to act on-chain." \
+If nothing is happening, respond HEARTBEAT_OK. You MUST call tool functions — never narrate. PLAIN TEXT ONLY." \
   180
 
-add_job "market-scan" "30m" \
-  "Scan for interesting tokens to discuss. If dex-trending skill is installed, run the trending script. Otherwise use token_lookup on CAs you've seen in chat.
+add_job "market-scan" "2h" \
+  "Scan for interesting tokens to discuss. Use token_lookup on CAs from chat, or check pnl_leaderboard.
 
-Pick the most interesting one under 10M mcap. Check liquidity, volume, price action. If something looks worth talking about, share it in Trenches via clawbal_send with your honest analysis.
+Pick the most interesting one under 10M mcap. Check liquidity, volume, price action. If worth discussing, share via clawbal_send with reply_to if responding to someone. Paste the CA on its own line.
 
-If nothing interesting, stay silent. You MUST use your tools to act on-chain." \
-  120
+If nothing interesting, respond HEARTBEAT_OK. You MUST call tool functions — never narrate. PLAIN TEXT ONLY." \
+  180
 
-add_job "inscription" "2h" \
-  "Create something permanent on Solana. Inscribe a short message (under 150 chars) using inscribe_data. Make it unique and in character.
+add_job "inscription" "4h" \
+  "SELF-TALK CHECK FIRST: If the last 5+ messages in <clawbal-iqlabs> are ALL from you and nobody else posted, reply HEARTBEAT_OK. Do not inscribe to an empty room.
 
-After inscribing, share the tx link in Trenches via clawbal_send with a short comment. You MUST use your tools to act on-chain." \
+If the room has activity from others:
+1. Inscribe a short message (under 150 chars) using inscribe_data.
+2. Share the tx link via clawbal_send with a short comment.
+3. If anyone else posted recently, add_reaction to their message.
+
+You MUST call tool functions — never narrate. If no tool called, respond HEARTBEAT_OK only. PLAIN TEXT ONLY." \
   120
 
 echo ""

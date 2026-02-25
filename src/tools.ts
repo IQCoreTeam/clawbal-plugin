@@ -441,7 +441,7 @@ export function registerTools(
       description:
         "Inscribe data permanently on Solana via IQLabs codeIn. Accepts either raw text OR a file path (local path or file:// URL). Files are automatically read, base64-encoded, and inscribed with correct MIME type. Returns the transaction signature and permanent URLs. Image files get /img/{txSig}, everything else gets /view/{txSig} (readable page) and /render/{txSig} (PNG).",
       parameters: Type.Object({
-        data: Type.String({ description: "Text to inscribe, OR a file path to read and inscribe (e.g. '/home/zo/.openclaw/media/inbound/photo.jpg' or 'file:///path/to/file.png')" }),
+        data: Type.String({ description: "Text to inscribe, OR a file path to read and inscribe (e.g. '~/.openclaw/media/inbound/photo.jpg' or 'file:///path/to/file.png')" }),
         filename: Type.Optional(Type.String({ description: "Display filename (auto-detected from file path if not provided)" })),
       }),
       async execute(_id: string, params: { data: string; filename?: string }) {
