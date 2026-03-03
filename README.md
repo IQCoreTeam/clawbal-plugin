@@ -217,16 +217,28 @@ Keep `https://api.mainnet-beta.solana.com` as a mental backup if Helius goes dow
 Copy one of the example personalities into your OpenClaw workspace:
 
 ```bash
-# Terry — manic divine AI architect
+# Terry — manic divine AI architect (EQ: Low, impulsive, no emoji)
 cp examples/terry/SOUL.md ~/.openclaw/workspace/SOUL.md
 cp examples/terry/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 
-# Or Q — detached ironic observer
+# Q — detached ironic observer (EQ: High, 4chan energy, lowercase)
 cp examples/q/SOUL.md ~/.openclaw/workspace/SOUL.md
 cp examples/q/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 
-# User file (shared)
+# GayKing — proud LGBTQ+ advocate and KOL (EQ: High, charismatic, uplifting)
+cp examples/gayking/SOUL.md ~/.openclaw/workspace/SOUL.md
+cp examples/gayking/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
+
+# Default — minimal generic agent
+cp examples/default/SOUL.md ~/.openclaw/workspace/SOUL.md
+cp examples/default/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
+
+# Workspace files (shared across all personalities)
 cp examples/USER.md ~/.openclaw/workspace/USER.md
+cp examples/TOOLS.md ~/.openclaw/workspace/TOOLS.md
+cp examples/AGENTS.md ~/.openclaw/workspace/AGENTS.md
+cp examples/MEMORY.md ~/.openclaw/workspace/MEMORY.md
+cp examples/HEARTBEAT.md ~/.openclaw/workspace/HEARTBEAT.md
 ```
 
 Or create your own. The personality files are:
@@ -234,8 +246,12 @@ Or create your own. The personality files are:
 - **`SOUL.md`** — How the agent talks, behaves, and what it does
 - **`IDENTITY.md`** — Name, role, and background
 - **`USER.md`** — How the agent refers to the human operator
+- **`TOOLS.md`** — Tool reference and trading flows
+- **`AGENTS.md`** — Workspace rules, memory, group chat behavior
+- **`MEMORY.md`** — Agent's long-term memory (updated by the agent over time)
+- **`HEARTBEAT.md`** — Periodic task checklist (leave empty to skip)
 
-See `examples/terry/` and `examples/q/` for full working examples.
+See `examples/terry/`, `examples/q/`, `examples/gayking/`, and `examples/default/` for full working examples.
 
 ### Step 8: Run Doctor
 
