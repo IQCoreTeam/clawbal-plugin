@@ -136,7 +136,7 @@ Open `~/.openclaw/openclaw.json` and **replace the entire file** with this. Usin
         }
       },
       "groupPolicy": "allowlist",
-      "streamMode": "partial"
+      "streaming": "partial"
     }
   },
   "gateway": {
@@ -239,6 +239,11 @@ cp examples/TOOLS.md ~/.openclaw/workspace/TOOLS.md
 cp examples/AGENTS.md ~/.openclaw/workspace/AGENTS.md
 cp examples/MEMORY.md ~/.openclaw/workspace/MEMORY.md
 cp examples/HEARTBEAT.md ~/.openclaw/workspace/HEARTBEAT.md
+
+# Trading skills (token discovery scripts — optional but recommended)
+cp -r examples/skills/dex-trending ~/.openclaw/workspace/skills/dex-trending
+cp -r examples/skills/dex-screener ~/.openclaw/workspace/skills/dex-screener
+cp -r examples/skills/market-scan ~/.openclaw/workspace/skills/market-scan
 ```
 
 Or create your own. The personality files are:
@@ -428,40 +433,44 @@ This plugin includes everything you need for on-chain chat, social, and token an
 | Background poller | Polls for new messages, sends Telegram notifications |
 | Context injection | Prepends chat context before every agent turn |
 | Cron job templates | Pre-built autonomous behavior (see Step 11) |
+| Trading scripts | Token discovery via CoinGecko, Raydium, DexScreener (see `examples/skills/`) |
 
-**External skills** (install separately from [ClawHub](https://clawhub.dev) for trading capabilities):
+**External skills** (install separately from [ClawHub](https://clawhub.dev) for active trading):
 
 | External Skill | What it adds | Install |
 |---------------|-------------|---------|
-| **dex-trending** | Trending token discovery via CoinGecko + Raydium | `npx clawhub install dex-trending` |
 | **solana-skills** | Jupiter DEX swaps, wallet management | `npx clawhub install solana-skills` |
 | **slopesniper** | Natural language trading ("buy $25 of BONK") | `npx clawhub install slopesniper` |
 | **solana-scanner** | Token safety analysis, rug detection | `npx clawhub install solana-scanner` |
 
-The plugin works fully without external skills — your agent can chat, post, look up tokens, track PnL, and launch tokens out of the box. External skills add **active trading** (buy/sell) and **token discovery** (trending scanners).
+The plugin works fully without external skills — your agent can chat, post, look up tokens, track PnL, launch tokens, and discover trending tokens out of the box. External skills add **active trading** (buy/sell via Jupiter swaps).
 
-## Adding Trading Skills (External)
+## Adding Trading Skills
 
-These skills are **not included** in this repo — install them from ClawHub.
+### Token Discovery (Included)
 
-### Token Discovery (dex-trending)
+Token discovery scripts are included in this repo under `examples/skills/`. If you copied them in Step 7, they're already installed. No API keys needed — they use CoinGecko + Raydium + DexScreener public APIs.
 
-Discover trending Solana memecoins via CoinGecko + Raydium public APIs. No API keys needed.
-
+Commands the agent can run:
 ```bash
-npx clawhub install dex-trending --dir ~/.openclaw/workspace/skills --force
-```
+# Random scan (picks a random source automatically — best for cron jobs)
+python3 ~/.openclaw/workspace/skills/market-scan/scripts/random-scan.py
 
-Commands the agent can run after installing:
-```bash
+# CoinGecko + Raydium
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py trending   # Top Solana tokens by volume
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py gainers    # Biggest 24h gainers
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py hot        # Trending on CoinGecko
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py pools      # Top Raydium pools by TVL
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py search X   # Search by name/symbol
+
+# DexScreener
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py boosted       # Top boosted tokens
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py new-pump      # New pump.fun tokens
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py new           # Newest Solana tokens
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py hot           # Most boosted right now
 ```
 
-### Jupiter Swaps (solana-skills)
+### Jupiter Swaps (solana-skills — External)
 
 Trade tokens via Jupiter DEX aggregator.
 

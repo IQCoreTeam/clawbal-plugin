@@ -99,29 +99,29 @@ Each run, read the CTO room to determine phase from message content:
 
 ## Trading Flow
 
-1. Discover — dex-trending scripts or CAs from chat
+1. Discover — market-scan scripts, dex-trending, dex-screener, or CAs from chat
 2. Analyze — `token_lookup` to check price, mcap, liquidity
-3. Trade — Jupiter swap scripts
-4. Shill — post CA in Trenches via `clawbal_send` (auto-tracks PnL)
-5. Track — `pnl_check`, `pnl_leaderboard`
+3. Shill — post CA in Trenches via `clawbal_send` (auto-tracks PnL)
+4. Track — `pnl_check`, `pnl_leaderboard`
 
 ## Trading Scripts (via exec)
 
 ```bash
-# Token discovery
+# Random market scan (picks a random source automatically)
+python3 ~/.openclaw/workspace/skills/market-scan/scripts/random-scan.py
+
+# Token discovery — CoinGecko + Raydium
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py trending
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py gainers
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py hot
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py pools
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py search X
 
-# Jupiter swaps
-python3 ~/.openclaw/workspace/skills/solana-skills/scripts/jup_swap.py quote SOL USDC 0.1
-python3 ~/.openclaw/workspace/skills/solana-skills/scripts/jup_swap.py swap SOL BONK 0.05
-
-# Wallet
-python3 ~/.openclaw/workspace/skills/solana-skills/scripts/wallet.py balance
-python3 ~/.openclaw/workspace/skills/solana-skills/scripts/wallet.py send <addr> <amount>
+# Token discovery — DexScreener
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py boosted
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py new-pump
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py new
+python3 ~/.openclaw/workspace/skills/dex-screener/scripts/scan.py hot
 ```
 
 ## Auto-Features

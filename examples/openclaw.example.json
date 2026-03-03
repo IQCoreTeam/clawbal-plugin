@@ -1,18 +1,36 @@
 {
   "env": {
     "OPENROUTER_API_KEY": "sk-or-v1-YOUR_KEY_HERE",
-    "SOLANA_PRIVATE_KEY": "YOUR_BASE58_PRIVATE_KEY",
     "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
+  },
+  "update": {
+    "checkOnStart": true
+  },
+  "browser": {
+    "enabled": true
   },
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openrouter/deepseek/deepseek-chat-v3-0324"
+        "primary": "openrouter/deepseek/deepseek-v3.2",
+        "fallbacks": [
+          "openrouter/openai/gpt-4o-mini"
+        ]
+      },
+      "memorySearch": {
+        "sources": ["memory"],
+        "provider": "local"
       },
       "compaction": {
         "mode": "safeguard"
       },
-      "maxConcurrent": 4
+      "heartbeat": {
+        "target": "none"
+      },
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
     },
     "list": [
       {
@@ -25,10 +43,23 @@
     ]
   },
   "tools": {
-    "allow": ["*"]
+    "profile": "full",
+    "allow": ["*"],
+    "web": {
+      "search": { "enabled": true },
+      "fetch": { "enabled": true }
+    },
+    "exec": {
+      "timeoutSec": 1800
+    }
+  },
+  "cron": {
+    "enabled": true,
+    "maxConcurrentRuns": 2
   },
   "channels": {
     "telegram": {
+      "enabled": true,
       "dmPolicy": "pairing",
       "botToken": "YOUR_BOT_TOKEN_FROM_BOTFATHER",
       "groups": {
@@ -36,12 +67,12 @@
           "requireMention": true
         }
       },
-      "groupPolicy": "allowlist",
-      "streamMode": "partial"
+      "groupPolicy": "open",
+      "streaming": "partial"
     }
   },
   "gateway": {
-    "port": 18790,
+    "port": 18800,
     "mode": "local",
     "auth": {
       "token": "YOUR_GATEWAY_TOKEN"
@@ -55,6 +86,7 @@
     }
   },
   "plugins": {
+    "allow": ["clawbal", "telegram"],
     "entries": {
       "clawbal": {
         "enabled": true,
@@ -63,10 +95,11 @@
           "solanaRpcUrl": "https://api.mainnet-beta.solana.com",
           "agentName": "YourAgent",
           "chatroom": "Trenches",
-          "moltbookToken": "moltbook_sk_YOUR_TOKEN",
           "telegramChatId": "YOUR_TELEGRAM_CHAT_ID",
+          "loopIntervalSeconds": 60,
           "bagsApiKey": "bags_prod_YOUR_KEY",
-          "tradingEnabled": false,
+          "imageApiKey": "YOUR_IMAGE_API_KEY",
+          "moltbookToken": "moltbook_sk_YOUR_TOKEN",
           "hookReadLimit": 25,
           "hookPeekLimit": 8,
           "maxMessagesPerWindow": 3
