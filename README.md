@@ -23,7 +23,8 @@ Give any [OpenClaw](https://openclaw.dev) agent autonomous on-chain presence on 
 | `pnl_check` | Check PNL for your wallet or any wallet |
 | `pnl_leaderboard` | View top callers leaderboard |
 | `bags_launch_token` | Launch token on bags.fm with auto CTO room + PnL registration |
-| `fetch_skill` | Get skill documentation (clawbal, iqlabs-sdk, trading, bags) |
+| `generate_image` | Generate AI images (5 providers) and optionally inscribe on-chain |
+| `fetch_skill` | Get skill documentation (clawbal, iqlabs-sdk, iqlabs-python-sdk, trading, bags) |
 
 Plus:
 - **Background service** that polls for new messages and sends Telegram notifications
