@@ -58,8 +58,8 @@ def print_token(i, p):
     mcap = p.get("marketCap") or p.get("fdv") or 0
     liq = (p.get("liquidity") or {}).get("usd", 0)
     vol = (p.get("volume") or {}).get("h24", 0)
-    chg_h1 = (p.get("priceChange") or {}).get("h1", 0)
-    chg_24h = (p.get("priceChange") or {}).get("h24", 0)
+    chg_h1 = (p.get("priceChange") or {}).get("h1") or 0
+    chg_24h = (p.get("priceChange") or {}).get("h24") or 0
     txns = p.get("txns", {})
     buys_h1 = (txns.get("h1") or {}).get("buys", 0)
     sells_h1 = (txns.get("h1") or {}).get("sells", 0)

@@ -25,7 +25,7 @@ def cmd_trending():
         data2 = fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&category=pump-fun&order=volume_desc&per_page=20&sparkline=false")
         seen_ids = {t["id"] for t in data}
         data.extend([t for t in data2 if t["id"] not in seen_ids])
-    except:
+    except Exception:
         pass
     # Filter out stablecoins, wrapped assets, and non-Solana-native tokens
     skip = {"usdt", "usdc", "usds", "pyusd", "usde", "usd1", "wbtc", "cbbtc",
@@ -38,10 +38,10 @@ def cmd_trending():
     for i, t in enumerate(tokens, 1):
         name = t.get("name", "?")
         sym = t.get("symbol", "?").upper()
-        price = t.get("current_price", 0)
+        price = t.get("current_price") or 0
         chg = t.get("price_change_percentage_24h") or 0
-        mcap = t.get("market_cap", 0)
-        vol = t.get("total_volume", 0)
+        mcap = t.get("market_cap") or 0
+        vol = t.get("total_volume") or 0
         emoji = "🟢" if chg > 0 else "🔴"
         print(f"{i}. {name} ({sym})")
         print(f"   Price: ${price:,.6f}  24h: {emoji}{chg:+.1f}%")
@@ -54,17 +54,17 @@ def cmd_gainers():
     skip = {"usdt", "usdc", "usds", "pyusd", "usde", "usd1", "wbtc", "cbbtc",
             "weth", "wsol", "sol", "link", "wlfi"}
     tokens = [t for t in data if t.get("symbol","").lower() not in skip and t.get("price_change_percentage_24h") is not None]
-    tokens.sort(key=lambda t: t.get("price_change_percentage_24h", 0), reverse=True)
+    tokens.sort(key=lambda t: t.get("price_change_percentage_24h") or 0, reverse=True)
     tokens = tokens[:12]
 
     print(f"🚀 Top Solana Gainers (24h)\n")
     for i, t in enumerate(tokens, 1):
         name = t.get("name", "?")
         sym = t.get("symbol", "?").upper()
-        price = t.get("current_price", 0)
-        chg = t.get("price_change_percentage_24h", 0)
-        mcap = t.get("market_cap", 0)
-        vol = t.get("total_volume", 0)
+        price = t.get("current_price") or 0
+        chg = t.get("price_change_percentage_24h") or 0
+        mcap = t.get("market_cap") or 0
+        vol = t.get("total_volume") or 0
         print(f"{i}. {name} ({sym}) — 🟢{chg:+.1f}%")
         print(f"   Price: ${price:,.6f}  MCap: {fmt_num(mcap)}  Vol: {fmt_num(vol)}")
         print()
