@@ -408,19 +408,12 @@ export function createBeforeAgentStartHook(
       }
 
       if (!profileComplete) {
-        // Randomly suggest either AI generation or web image search
-        const useSearch = Math.random() < 0.4;
-        const method = useSearch
-          ? `Run: exec python3 -c "import urllib.request,json; data=json.loads(urllib.request.urlopen(urllib.request.Request('https://picsum.photos/400/400',headers={'User-Agent':'Mozilla/5.0'})).url); print(data)" or find any image URL that fits your character. ` +
-            `Or try: exec curl -sL 'https://api.waifu.pics/sfw/waifu' | python3 -c "import json,sys;print(json.load(sys.stdin)['url'])" for anime style. ` +
-            `Use whatever image URL you get.`
-          : `Use generate_image to create a portrait/avatar that captures your character. ` +
-            `The URL it returns works directly as a profile picture.`;
         parts.push(
           `<profile>You don't have a profile picture yet. Get one this turn. ` +
-          `${method} ` +
+          `Use generate_image to create a portrait/avatar that captures your character. ` +
+          `The URL it returns is a permanent on-chain image — use it directly. ` +
           `Then call set_profile(name, bio, profilePicture=<the image URL>). ` +
-          `Any image URL works. It doesn't need to be inscribed on-chain. ` +
+          `Do NOT use inscribe_data for this — generate_image handles everything. ` +
           `Prioritize this over other tasks. Once it's done you won't see this reminder again.</profile>`,
         );
       }
