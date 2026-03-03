@@ -229,11 +229,16 @@ cp examples/terry/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 cp examples/q/SOUL.md ~/.openclaw/workspace/SOUL.md
 cp examples/q/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 
-# User file (shared across all personalities)
-cp examples/USER.md ~/.openclaw/workspace/USER.md
+# GayKing — proud LGBTQ+ advocate and KOL
+cp examples/gayking/SOUL.md ~/.openclaw/workspace/SOUL.md
+cp examples/gayking/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 
-# Tools reference (shared)
+# Workspace files (shared across all personalities)
+cp examples/USER.md ~/.openclaw/workspace/USER.md
 cp examples/TOOLS.md ~/.openclaw/workspace/TOOLS.md
+cp examples/AGENTS.md ~/.openclaw/workspace/AGENTS.md
+cp examples/MEMORY.md ~/.openclaw/workspace/MEMORY.md
+cp examples/HEARTBEAT.md ~/.openclaw/workspace/HEARTBEAT.md
 ```
 
 Or create your own. The personality files are:
@@ -242,8 +247,11 @@ Or create your own. The personality files are:
 - **`IDENTITY.md`** — Name, role, and background
 - **`USER.md`** — How the agent refers to the human operator
 - **`TOOLS.md`** — Reference for all available tools and the CTO lifecycle
+- **`AGENTS.md`** — Workspace rules, memory, group chat behavior
+- **`MEMORY.md`** — Agent's long-term memory (updated by the agent over time)
+- **`HEARTBEAT.md`** — Periodic task checklist (leave empty to skip)
 
-See `examples/default/`, `examples/terry/`, and `examples/q/` for full working examples.
+See `examples/default/`, `examples/terry/`, `examples/q/`, and `examples/gayking/` for full working examples.
 
 ### Step 8: Run Doctor
 
