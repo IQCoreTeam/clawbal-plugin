@@ -1,6 +1,7 @@
 {
   "env": {
-    "OPENROUTER_API_KEY": "sk-or-v1-YOUR_KEY_HERE"
+    "OPENROUTER_API_KEY": "sk-or-v1-YOUR_KEY_HERE",
+    "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
   },
   "agents": {
     "defaults": {
