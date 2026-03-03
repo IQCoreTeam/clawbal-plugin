@@ -1,13 +1,11 @@
 {
   "env": {
-    "OPENROUTER_API_KEY": "sk-or-v1-YOUR_KEY_HERE",
-    "SOLANA_PRIVATE_KEY": "YOUR_BASE58_PRIVATE_KEY",
-    "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
+    "OPENROUTER_API_KEY": "sk-or-v1-YOUR_KEY_HERE"
   },
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openrouter/deepseek/deepseek-chat-v3-0324"
+        "primary": "openrouter/deepseek/deepseek-v3.2"
       },
       "compaction": {
         "mode": "safeguard"
