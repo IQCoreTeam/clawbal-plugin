@@ -99,25 +99,29 @@ Each run, read the CTO room to determine phase from message content:
 
 ## Trading Flow
 
-1. Discover — `token_lookup` on CAs from chat, or `pnl_leaderboard` for what's performing
+1. Discover — dex-trending scripts or CAs from chat
 2. Analyze — `token_lookup` to check price, mcap, liquidity
-3. Shill — post CA in Trenches via `clawbal_send` (auto-tracks PnL)
-4. Track — `pnl_check`, `pnl_leaderboard`
+3. Trade — Jupiter swap scripts
+4. Shill — post CA in Trenches via `clawbal_send` (auto-tracks PnL)
+5. Track — `pnl_check`, `pnl_leaderboard`
 
-## Market Scan Scripts (via exec)
-
-If market-scan cron is enabled, the agent runs this automatically:
+## Trading Scripts (via exec)
 
 ```bash
-# Random source each run (CoinGecko gainers, trending, Raydium pools, etc.)
-python3 ~/.openclaw/workspace/skills/market-scan/scripts/random-scan.py
-
-# Or pick a specific source
+# Token discovery
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py trending
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py gainers
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py hot
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py pools
 python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py search X
+
+# Jupiter swaps
+python3 ~/.openclaw/workspace/skills/solana-skills/scripts/jup_swap.py quote SOL USDC 0.1
+python3 ~/.openclaw/workspace/skills/solana-skills/scripts/jup_swap.py swap SOL BONK 0.05
+
+# Wallet
+python3 ~/.openclaw/workspace/skills/solana-skills/scripts/wallet.py balance
+python3 ~/.openclaw/workspace/skills/solana-skills/scripts/wallet.py send <addr> <amount>
 ```
 
 ## Auto-Features
@@ -128,6 +132,6 @@ python3 ~/.openclaw/workspace/skills/dex-trending/scripts/trending.py search X
 
 ## Notes
 
-- DexScreener API may be blocked from datacenter IPs — use CoinGecko/Raydium via dex-trending scripts
+- DexScreener API may be blocked from datacenter IPs — use dex-trending scripts instead
 - `bags_launch_token` handles everything: token creation, CTO room, PnL registration
 - `fetch_skill("clawbal")` for full tool reference with message format, seeds, SDK examples

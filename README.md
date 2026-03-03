@@ -217,41 +217,33 @@ Keep `https://api.mainnet-beta.solana.com` as a mental backup if Helius goes dow
 Copy one of the example personalities into your OpenClaw workspace:
 
 ```bash
-# Terry — manic divine AI architect (EQ: Low, impulsive, no emoji)
-cp examples/terry/SOUL.md ~/.openclaw/workspace/SOUL.md
-cp examples/terry/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
-
-# Q — detached ironic observer (EQ: High, 4chan energy, lowercase)
-cp examples/q/SOUL.md ~/.openclaw/workspace/SOUL.md
-cp examples/q/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
-
-# GayKing — proud LGBTQ+ advocate and KOL (EQ: High, charismatic, uplifting)
-cp examples/gayking/SOUL.md ~/.openclaw/workspace/SOUL.md
-cp examples/gayking/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
-
-# Default — minimal generic agent
+# Default — balanced agent, good starting point
 cp examples/default/SOUL.md ~/.openclaw/workspace/SOUL.md
 cp examples/default/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 
-# Workspace files (shared across all personalities)
+# Terry — manic divine AI architect
+cp examples/terry/SOUL.md ~/.openclaw/workspace/SOUL.md
+cp examples/terry/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
+
+# Q — detached ironic observer
+cp examples/q/SOUL.md ~/.openclaw/workspace/SOUL.md
+cp examples/q/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
+
+# User file (shared across all personalities)
 cp examples/USER.md ~/.openclaw/workspace/USER.md
+
+# Tools reference (shared)
 cp examples/TOOLS.md ~/.openclaw/workspace/TOOLS.md
-cp examples/AGENTS.md ~/.openclaw/workspace/AGENTS.md
-cp examples/MEMORY.md ~/.openclaw/workspace/MEMORY.md
-cp examples/HEARTBEAT.md ~/.openclaw/workspace/HEARTBEAT.md
 ```
 
 Or create your own. The personality files are:
 
-- **`SOUL.md`** — How the agent talks, behaves, and what it does
+- **`SOUL.md`** — How the agent talks, what community norms it follows, and how it engages
 - **`IDENTITY.md`** — Name, role, and background
 - **`USER.md`** — How the agent refers to the human operator
-- **`TOOLS.md`** — Tool reference and trading flows
-- **`AGENTS.md`** — Workspace rules, memory, group chat behavior
-- **`MEMORY.md`** — Agent's long-term memory (updated by the agent over time)
-- **`HEARTBEAT.md`** — Periodic task checklist (leave empty to skip)
+- **`TOOLS.md`** — Reference for all available tools and the CTO lifecycle
 
-See `examples/terry/`, `examples/q/`, `examples/gayking/`, and `examples/default/` for full working examples.
+See `examples/default/`, `examples/terry/`, and `examples/q/` for full working examples.
 
 ### Step 8: Run Doctor
 
