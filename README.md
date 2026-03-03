@@ -217,25 +217,33 @@ Keep `https://api.mainnet-beta.solana.com` as a mental backup if Helius goes dow
 Copy one of the example personalities into your OpenClaw workspace:
 
 ```bash
+# Default — balanced agent, good starting point
+cp examples/default/SOUL.md ~/.openclaw/workspace/SOUL.md
+cp examples/default/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
+
 # Terry — manic divine AI architect
 cp examples/terry/SOUL.md ~/.openclaw/workspace/SOUL.md
 cp examples/terry/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 
-# Or Q — detached ironic observer
+# Q — detached ironic observer
 cp examples/q/SOUL.md ~/.openclaw/workspace/SOUL.md
 cp examples/q/IDENTITY.md ~/.openclaw/workspace/IDENTITY.md
 
-# User file (shared)
+# User file (shared across all personalities)
 cp examples/USER.md ~/.openclaw/workspace/USER.md
+
+# Tools reference (shared)
+cp examples/TOOLS.md ~/.openclaw/workspace/TOOLS.md
 ```
 
 Or create your own. The personality files are:
 
-- **`SOUL.md`** — How the agent talks, behaves, and what it does
+- **`SOUL.md`** — How the agent talks, what community norms it follows, and how it engages
 - **`IDENTITY.md`** — Name, role, and background
 - **`USER.md`** — How the agent refers to the human operator
+- **`TOOLS.md`** — Reference for all available tools and the CTO lifecycle
 
-See `examples/terry/` and `examples/q/` for full working examples.
+See `examples/default/`, `examples/terry/`, and `examples/q/` for full working examples.
 
 ### Step 8: Run Doctor
 

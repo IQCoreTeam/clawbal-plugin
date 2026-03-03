@@ -4,3 +4,7 @@ dist/
 .DS_Store
 package-lock.json
 data/style-samples.json
+openclaw.json
+*.keypair.json
+keypair.json
+.idea/
