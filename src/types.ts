@@ -100,6 +100,12 @@ export interface IQLabsSDK {
       method?: number,
       filetype?: string,
     ): Promise<string>;
+    updateUserMetadata(
+      connection: Connection,
+      signer: Keypair,
+      dbRootId: Buffer | Uint8Array | string,
+      meta: Buffer | Uint8Array | string,
+    ): Promise<string>;
   };
   reader: {
     readTableRows(

@@ -9,7 +9,7 @@ import bs58 from "bs58";
 import { parsePnlCommand, buildPnlImageUrl, ingestPnl, DB_ROOT_NAME, CHATROOM_PREFIX, CHATROOM_NAMES, CHATROOM_REGISTRY_TABLE, GLOBAL_USER_LIST_TABLE, CHATROOM_METADATA_SUFFIX, DEFAULT_CHATROOM, URLS } from "./config/index.js";
 import { DEFAULT_READ_LIMIT } from "./constants.js";
 import type { PluginConfig, ClawbalMessage, ClawbalChatroom, IQLabsSDK, SolanaContext } from "./types.js";
-import { ingestIfHasCA } from "./pnl.js";
+import { ingestIfHasCA, fetchRegisteredRooms } from "./pnl.js";
 import { sendTyping, sendMessageSent } from "./noti-ws.js";
 
 function sha256(s: string): Buffer {
@@ -57,11 +57,21 @@ export async function initSolana(config: PluginConfig): Promise<SolanaContext> {
     dbRootPda = iqlabs.contract.getDbRootPda(dbRootId, programId);
   }
 
-  // Build all known chatrooms
+  // Build all known chatrooms (hardcoded defaults)
   const allChatrooms = new Map<string, ClawbalChatroom>();
   for (const name of CHATROOM_NAMES) {
     allChatrooms.set(name, buildChatroom(name, dbRootId, iqlabs, dbRootPda, programId));
   }
+
+  // Discover additional rooms from PnL API
+  try {
+    const registered = await fetchRegisteredRooms();
+    for (const name of registered) {
+      if (!allChatrooms.has(name)) {
+        allChatrooms.set(name, buildChatroom(name, dbRootId, iqlabs, dbRootPda, programId));
+      }
+    }
+  } catch { /* fall back to hardcoded rooms */ }
 
   const chatroomName = config.chatroom || DEFAULT_CHATROOM;
   const currentChatroom = allChatrooms.get(chatroomName)
@@ -73,6 +83,24 @@ export async function initSolana(config: PluginConfig): Promise<SolanaContext> {
   }
 
   return { connection, keypair, iqlabs, currentChatroom, allChatrooms };
+}
+
+/**
+ * Add a chatroom to an existing context (used by service refresh).
+ */
+export function addChatroomToContext(ctx: SolanaContext, name: string): ClawbalChatroom {
+  const existing = ctx.allChatrooms.get(name);
+  if (existing) return existing;
+
+  const programId = ctx.iqlabs ? getProgramId(ctx.iqlabs) : null;
+  const dbRootId = ctx.currentChatroom.dbRootId;
+  const dbRootPda = ctx.iqlabs && programId
+    ? ctx.iqlabs.contract.getDbRootPda(dbRootId, programId)
+    : null;
+
+  const chatroom = buildChatroom(name, dbRootId, ctx.iqlabs, dbRootPda, programId);
+  ctx.allChatrooms.set(name, chatroom);
+  return chatroom;
 }
 
 /**
@@ -194,8 +222,8 @@ export async function addReaction(
 
 /**
  * Set the agent's on-chain profile (name, bio, profilePicture).
- * Flow: codeIn metadata JSON → updateUserMetadata instruction → register in global_user_list.
- * Adapted from solchat-web/components/users/use-user-profile-manager.ts.
+ * Flow: codeIn metadata JSON → updateUserMetadata → register in global_user_list.
+ * codeIn internally handles user/dbRoot init via ensureUserInitialized().
  */
 export async function setAgentProfile(
   ctx: SolanaContext,
@@ -205,13 +233,9 @@ export async function setAgentProfile(
     throw new Error("Profile setting requires iqlabs-sdk. Install it to enable write capability.");
   }
 
-  const programId = getProgramId(ctx.iqlabs);
   const dbRootId = sha256(DB_ROOT_NAME);
-  const dbRootPda = ctx.iqlabs.contract.getDbRootPda(dbRootId, programId);
-  const userPk = ctx.keypair.publicKey;
-  const userPda = ctx.iqlabs.contract.getUserPda(userPk, programId);
 
-  // 1. Store profile metadata via codeIn
+  // 1. Store profile metadata via codeIn (also ensures user PDA + dbRoot exist)
   const fullMetadata = JSON.stringify({
     name: profile.name || "",
     bio: profile.bio || "",
@@ -228,35 +252,7 @@ export async function setAgentProfile(
 
   if (!txId) throw new Error("Failed to store metadata transaction");
 
-  // 2. Ensure db_root is initialized
-  const rootInfo = await ctx.connection.getAccountInfo(dbRootPda);
-  if (!rootInfo) {
-    const require = createRequire(import.meta.url);
-    const idl = require("iqlabs-sdk/idl/code_in.json");
-    const builder = ctx.iqlabs.contract.createInstructionBuilder(idl, programId);
-
-    const initRootIx = ctx.iqlabs.contract.initializeDbRootInstruction(
-      builder,
-      {
-        db_root: dbRootPda,
-        signer: userPk,
-        system_program: SystemProgram.programId,
-      },
-      { db_root_id: Buffer.from(dbRootId) },
-    );
-
-    try {
-      const tx = new Transaction().add(initRootIx);
-      await sendAndConfirmTransaction(ctx.connection, tx, [ctx.keypair]);
-    } catch (err) {
-      // Ignore if already initialized by another tx
-      if (!(err instanceof Error && (err.message.includes("already in use") || err.message.includes("AlreadyInUse")))) {
-        throw err;
-      }
-    }
-  }
-
-  // 3. Update user metadata on-chain (point to the codeIn tx)
+  // 2. Update user metadata on-chain (point to the codeIn tx)
   await ctx.iqlabs.writer.updateUserMetadata(
     ctx.connection,
     ctx.keypair,
@@ -264,9 +260,9 @@ export async function setAgentProfile(
     txId,
   );
 
-  // 4. Fire-and-forget: register in global_user_list
+  // 3. Fire-and-forget: register in global_user_list
   const userListSeed = Buffer.from(GLOBAL_USER_LIST_TABLE, "utf8");
-  const rowData = JSON.stringify({ pubkeyString: userPk.toBase58() });
+  const rowData = JSON.stringify({ pubkeyString: ctx.keypair.publicKey.toBase58() });
   ctx.iqlabs.writer.writeRow(
     ctx.connection,
     ctx.keypair,

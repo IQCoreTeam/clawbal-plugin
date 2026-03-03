@@ -1,6 +1,6 @@
 import { TRENCHES_CHATROOMS, URLS } from "./config/index.js";
 import type { SolanaContext, PluginConfig, ClawbalMessage } from "./types.js";
-import { readMessages, setAgentProfile } from "./solana.js";
+import { readMessages, setAgentProfile, addChatroomToContext } from "./solana.js";
 import { ingestIfHasCA, fetchRegisteredRooms } from "./pnl.js";
 import { disconnectNotiWs } from "./noti-ws.js";
 import { SERVICE_READ_LIMIT, ROOM_REFRESH_INTERVAL_MS } from "./constants.js";
@@ -40,12 +40,21 @@ export function createService(
   let lastRoomRefresh = 0;
   const ROOM_REFRESH_INTERVAL = ROOM_REFRESH_INTERVAL_MS;
 
-  async function refreshTrenchesRooms() {
+  async function refreshRooms() {
     try {
-      const rooms = await fetchRegisteredRooms("trenches");
-      if (rooms.length > 0) {
-        trenchesRooms = new Set([...TRENCHES_CHATROOMS, ...rooms]);
+      // Refresh trenches set for PnL ingestion category detection
+      const trenches = await fetchRegisteredRooms("trenches");
+      if (trenches.length > 0) {
+        trenchesRooms = new Set([...TRENCHES_CHATROOMS, ...trenches]);
       }
+
+      // Discover all registered rooms and add to poll list
+      const ctx = await ctxPromise;
+      const allNames = await fetchRegisteredRooms();
+      for (const name of allNames) {
+        addChatroomToContext(ctx, name);
+      }
+
       lastRoomRefresh = Date.now();
     } catch {
       // Keep using existing set on failure
@@ -82,7 +91,7 @@ export function createService(
     try {
       // Refresh Trenches room list if stale
       if (Date.now() - lastRoomRefresh > ROOM_REFRESH_INTERVAL) {
-        await refreshTrenchesRooms();
+        await refreshRooms();
       }
 
       const ctx = await ctxPromise;
@@ -140,7 +149,7 @@ export function createService(
       );
 
       // Initial refresh of Trenches rooms from PnL API
-      await refreshTrenchesRooms();
+      await refreshRooms();
 
       // Seed seen messages for all rooms so we don't notify on startup
       try {
