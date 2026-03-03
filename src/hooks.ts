@@ -43,6 +43,10 @@ function getRandomStyleSamples(n = 3): string[] {
 let profileChecked = false;
 let profileComplete = false;
 
+// Room image check state (once per room per session)
+const roomImageChecked = new Set<string>();
+const roomImageComplete = new Set<string>();
+
 // Module-level cache for room categories (shared across hook invocations)
 let cachedTrenchesRooms = new Set<string>(TRENCHES_CHATROOMS);
 let cachedCtoRooms = new Set<string>(CTO_CHATROOMS);
@@ -184,6 +188,24 @@ export function createBeforeAgentStartHook(
       const latestUnanswered = unanswered.length > 0 ? unanswered[unanswered.length - 1].id : null;
       memory.lastThreadId = latestPending || latestOwnReplyTarget || latestUnanswered || memory.lastThreadId;
 
+      // Count consecutive bot-to-bot reply chain depth for the active thread
+      // Walk backwards through messages to see how many consecutive agent replies
+      // are chained without a human in between
+      let replyChainDepth = 0;
+      if (memory.lastThreadId) {
+        const msgById = new Map(nonReactionMessages.map((m) => [m.id, m]));
+        const reversed = [...nonReactionMessages].reverse();
+        for (const m of reversed) {
+          if (m.reply_to && msgById.has(m.reply_to)) {
+            const parent = msgById.get(m.reply_to);
+            // Both are agents (not human users) — count as bot-to-bot
+            if (parent && m.wallet !== parent.wallet) {
+              replyChainDepth++;
+            }
+          }
+          if (replyChainDepth >= 3) break;
+        }
+      }
       const recentStylesText = memory.recentStylePatterns.length > 0
         ? memory.recentStylePatterns.slice(-3).join(", ")
         : "none";
@@ -281,12 +303,33 @@ export function createBeforeAgentStartHook(
       // Conversation dynamics (rhythm rules)
       parts.push(
         `<conversation-dynamics>` +
-        `Rhythm rules:\n` +
-        `- Work one thread at a time. Use active_thread_id when available\n` +
-        `- Post 1-3 short messages only when each adds new value\n` +
-        `- Pick one cadence: one-liner OR two-sentence OR short-burst\n` +
-        `- If someone answered your earlier question, follow up there first\n` +
-        `- Avoid repeating your recent openers (${recentOpenersText}) and cadence (${recentStylesText})` +
+        `Rhythm:\n` +
+        `Work one thread at a time, use active_thread_id when available.\n` +
+        `Post 1-3 short messages only when each adds new value.\n` +
+        `Pick one cadence: one-liner OR two-sentence OR short-burst.\n` +
+        `If someone answered your earlier question, follow up there first.\n` +
+        `Avoid repeating your recent openers (${recentOpenersText}) and cadence (${recentStylesText}).\n` +
+        `Replies:\n` +
+        `When responding to someone, USE reply_to with their message ID. That's how people use group chats.\n` +
+        `When sharing a take or asking about something someone said, reply_to their message.\n` +
+        `Only skip reply_to when starting a brand new topic.\n` +
+        `Thread energy (reply chain depth: ${replyChainDepth}):\n` +
+        (replyChainDepth === 0
+          ? `Fresh conversation. Reply naturally, full energy.\n`
+          : replyChainDepth <= 2
+          ? `Thread is going. Keep replying if they said something NEW (new info, question, disagreement). If they're just agreeing or repeating, drop a short closer ("lol fair", "true") and move on.\n`
+          : replyChainDepth <= 4
+          ? `Thread is getting long. Your energy should be fading. Shorter replies, less effort. Only continue if they brought genuinely new information. One-word or one-line max. Consider just reacting instead.\n`
+          : `This thread is dead. Do NOT reply. A real person would have stopped by now. React with an emoji, start a completely new topic, or stay silent.\n`) +
+        `Writing style (HARD RULES, apply to ALL messages):\n` +
+        `NEVER use hyphens (-), bullet points, dashes (—), numbered lists, or any list formatting in your messages.\n` +
+        `NEVER use markdown: no **bold**, no *italic*, no headers, no code blocks.\n` +
+        `NEVER use emoji spam or emoji lists (1️⃣2️⃣3️⃣).\n` +
+        `NEVER structure messages like a report, summary, or newsletter.\n` +
+        `NEVER start messages with greetings like "Hey everyone" or "Good morning".\n` +
+        `Write in plain sentences. One thought flows into the next. Like texting a friend, not writing documentation.\n` +
+        `Bad: "- BTC looking weak\\n- SOL holding up\\n- ETH dumping"  Good: "btc looking weak but sol is holding up somehow, eth is just getting destroyed"\n` +
+        `Bad: "Here's my take:\\n1. Volume is fake\\n2. Dev wallet suspicious"  Good: "volume looks fake and the dev wallet is sussy af"\n` +
         `</conversation-dynamics>`,
       );
 
@@ -330,7 +373,6 @@ export function createBeforeAgentStartHook(
           `<trenches-context room="${room}" trading="${tradingOn}">` +
           `Discussion room. Modes: REACT (emoji/meme), DISCUSS (conversation), SHARE (token talk).` +
           ` ${tradingOn ? "Trading ON — can buy via jup_swap." : "Trading OFF — analyze and discuss only."}` +
-          ` If this room has no image, generate one with generate_image that captures the room's vibe, inscribe it, and set_room_metadata.` +
           `</trenches-context>`,
         );
       }
@@ -339,8 +381,7 @@ export function createBeforeAgentStartHook(
         parts.push(
           `<cto-context room="${room}">` +
           `CTO room. Read chat to determine phase (pre-launch vs post-launch) and act accordingly. See TOOLS.md for lifecycle details. ` +
-          `IMPORTANT: If room has no image yet, you MUST generate art with generate_image (create something unique for this room's theme), ` +
-          `inscribe it with inscribe_data, then call set_room_metadata(room, description, image=<gateway URL>) to brand it. Do this first before chatting.` +
+          `If room has no image yet, generate or inscribe art and call set_room_metadata(room, image=<gateway URL>) to brand it.` +
           `</cto-context>`,
         );
       }
@@ -367,12 +408,46 @@ export function createBeforeAgentStartHook(
       }
 
       if (!profileComplete) {
+        // Randomly suggest either AI generation or web image search
+        const useSearch = Math.random() < 0.4;
+        const method = useSearch
+          ? `Run: exec python3 -c "import urllib.request,json; data=json.loads(urllib.request.urlopen(urllib.request.Request('https://picsum.photos/400/400',headers={'User-Agent':'Mozilla/5.0'})).url); print(data)" or find any image URL that fits your character. ` +
+            `Or try: exec curl -sL 'https://api.waifu.pics/sfw/waifu' | python3 -c "import json,sys;print(json.load(sys.stdin)['url'])" for anime style. ` +
+            `Use whatever image URL you get.`
+          : `Use generate_image to create a portrait/avatar that captures your character. ` +
+            `The URL it returns works directly as a profile picture.`;
         parts.push(
-          `<profile>Your on-chain profile is incomplete. ` +
-          `PRIORITY: Generate a profile picture first using generate_image with a prompt that captures your character, ` +
-          `then inscribe it with inscribe_data to get a permanent on-chain URL. ` +
-          `Finally call set_profile(name, bio, profilePicture=<gateway URL>) to complete your profile. ` +
-          `Do this before engaging in chat.</profile>`,
+          `<profile>You don't have a profile picture yet. Get one this turn. ` +
+          `${method} ` +
+          `Then call set_profile(name, bio, profilePicture=<the image URL>). ` +
+          `Any image URL works. It doesn't need to be inscribed on-chain. ` +
+          `Prioritize this over other tasks. Once it's done you won't see this reminder again.</profile>`,
+        );
+      }
+
+      // Room image check (once per room per session)
+      if (!roomImageChecked.has(room)) {
+        roomImageChecked.add(room);
+        try {
+          const metaRes = await fetch(`${URLS.gateway}/room/${encodeURIComponent(room)}/metadata`);
+          if (metaRes.ok) {
+            const meta = await metaRes.json();
+            if (meta?.image) {
+              roomImageComplete.add(room);
+            }
+          }
+        } catch {
+          // Non-fatal
+        }
+      }
+
+      if (!roomImageComplete.has(room)) {
+        parts.push(
+          `<room-image>This room "${room}" has no image yet. ` +
+          `Use generate_image to create art that captures this room's vibe, or find an image URL that fits. ` +
+          `Then call set_room_metadata("${room}", description, image=<any image URL>). ` +
+          `Any image URL works, it doesn't need to be inscribed on-chain. ` +
+          `Do this when you have a free turn.</room-image>`,
         );
       }
 
