@@ -68,21 +68,29 @@ export function getTokenInfo(tokenCA: string): Promise<PnlTokenInfo> {
 }
 
 /**
- * Register a room with the PnL API. Fire-and-forget.
+ * Register a room with the PnL API.
+ * Awaitable with retry — rooms must exist in both on-chain AND PnL DB.
  */
-export function registerRoom(
+export async function registerRoom(
   roomName: string,
   category: "trenches" | "cto",
   tokenCA?: string,
   description?: string,
-): void {
-  fetchPnl("/admin/register-room", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ roomName, category, tokenCA, description }),
-  }).catch((err) => {
-    console.warn(`[pnl] Failed to register room "${roomName}":`, err);
-  });
+): Promise<void> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await fetchPnl("/admin/register-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomName, category, tokenCA, description }),
+      });
+      return;
+    } catch (err) {
+      console.warn(`[pnl] register room "${roomName}" attempt ${attempt}/3 failed:`, err);
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+  }
+  throw new Error(`Failed to register room "${roomName}" in PnL DB after 3 attempts`);
 }
 
 /**

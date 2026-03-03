@@ -277,8 +277,8 @@ export function registerTools(
           const { chatroom, txSig } = await createChatroomOnChain(ctx, params.name, params.description);
           ctx.allChatrooms.set(chatroom.name, chatroom);
 
-          // Register with PnL API (fire-and-forget, idempotent)
-          registerRoom(params.name, roomType, params.tokenCA, params.description);
+          // Register with PnL API (awaited — room must exist in both on-chain AND DB)
+          await registerRoom(params.name, roomType, params.tokenCA, params.description);
 
           if (txSig === "(already exists)") {
             return textResult(`Chatroom "${params.name}" already exists. PnL registration updated.`);
@@ -686,7 +686,7 @@ export function registerTools(
           } catch (err) {
             console.warn("[bags] CTO room creation failed (non-fatal):", (err as Error).message);
           }
-          registerRoom(roomName, "cto", tokenMint, params.description);
+          await registerRoom(roomName, "cto", tokenMint, params.description);
 
           // 6. Auto-set room image from the token image if provided
           if (params.imageUrl) {
