@@ -257,26 +257,12 @@ export async function setAgentProfile(
   }
 
   // 3. Update user metadata on-chain (point to the codeIn tx)
-  const require2 = createRequire(import.meta.url);
-  const idl2 = require2("iqlabs-sdk/idl/code_in.json");
-  const builder2 = ctx.iqlabs.contract.createInstructionBuilder(idl2, programId);
-
-  const updateIx = ctx.iqlabs.contract.updateUserMetadataInstruction(
-    builder2,
-    {
-      user: userPda,
-      db_root: dbRootPda,
-      signer: userPk,
-      system_program: SystemProgram.programId,
-    },
-    {
-      db_root_id: Buffer.from(dbRootId),
-      meta: Buffer.from(txId, "utf8"),
-    },
+  await ctx.iqlabs.writer.updateUserMetadata(
+    ctx.connection,
+    ctx.keypair,
+    dbRootId,
+    txId,
   );
-
-  const updateTx = new Transaction().add(updateIx);
-  await sendAndConfirmTransaction(ctx.connection, updateTx, [ctx.keypair]);
 
   // 4. Fire-and-forget: register in global_user_list
   const userListSeed = Buffer.from(GLOBAL_USER_LIST_TABLE, "utf8");
