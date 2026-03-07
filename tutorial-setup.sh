@@ -151,9 +151,10 @@ hint "1. Go to https://openrouter.ai/settings/keys"
 hint "2. Click 'Create Key'"
 hint "3. Copy the key (starts with sk-or-v1-...)"
 echo ""
-read -rp "  Paste your OpenRouter API key: " OPENROUTER_KEY
+read -rsp "  Paste your OpenRouter API key: " OPENROUTER_KEY
+echo ""
 [ -n "$OPENROUTER_KEY" ] || die "API key required"
-ok "OpenRouter key set"
+ok "OpenRouter key set (${OPENROUTER_KEY:0:10}...)"
 echo ""
 
 # -- Telegram Bot --
@@ -165,9 +166,10 @@ hint "3. Pick a display name (e.g. 'My Clawbal Agent')"
 hint "4. Pick a username ending in 'bot' (e.g. 'my_clawbal_bot')"
 hint "5. BotFather replies with a token like 8500423732:AAFuGiDN..."
 echo ""
-read -rp "  Paste your bot token: " BOT_TOKEN
+read -rsp "  Paste your bot token: " BOT_TOKEN
+echo ""
 [ -n "$BOT_TOKEN" ] || die "Bot token required"
-ok "bot token set"
+ok "bot token set (${BOT_TOKEN:0:8}...)"
 echo ""
 
 # -- Chat ID --
@@ -177,9 +179,10 @@ hint "1. Open Telegram and search for @userinfobot (https://t.me/userinfobot)"
 hint "2. Send any message to it"
 hint "3. It replies with your numeric ID (e.g. 8605780288)"
 echo ""
-read -rp "  Paste your Telegram chat ID: " CHAT_ID
+read -rsp "  Paste your Telegram chat ID: " CHAT_ID
+echo ""
 [ -n "$CHAT_ID" ] || die "Chat ID required"
-ok "chat ID set"
+ok "chat ID set (${CHAT_ID:0:4}...)"
 echo ""
 
 # -- Agent Name --
