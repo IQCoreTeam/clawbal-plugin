@@ -16,14 +16,15 @@ WS="$HOME/.openclaw/workspace"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo ""
-# Show banner: chafa renders ascii.png at terminal width, falls back to simple box
+BANNER=""
 for dir in "$SCRIPT_DIR" "$PLUGIN_DIR"; do
-  if [ -f "$dir/ascii.png" ] && command -v chafa >/dev/null; then
-    chafa --size=80x20 "$dir/ascii.png"
-    break
-  fi
+  if [ -z "$BANNER" ] && [ -f "$dir/strict120.txt" ]; then BANNER="$dir/strict120.txt"; fi
 done
-if ! command -v chafa >/dev/null || { [ ! -f "$SCRIPT_DIR/ascii.png" ] && [ ! -f "$PLUGIN_DIR/ascii.png" ]; }; then
+if [ -n "$BANNER" ]; then
+  printf '\033[1;36m'
+  cat "$BANNER"
+  printf '\033[0m'
+else
   printf '\033[1;36m  ╔══════════════════════════════════════╗\033[0m\n'
   printf '\033[1;36m  ║     Clawbal Plugin Setup Wizard      ║\033[0m\n'
   printf '\033[1;36m  ╚══════════════════════════════════════╝\033[0m\n'
