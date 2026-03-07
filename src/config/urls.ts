@@ -1,6 +1,5 @@
 export const URLS = {
   gateway: process.env.IQ_GATEWAY_URL || "https://gateway.iqlabs.dev",
-  gatewayPublic: process.env.NEXT_PUBLIC_GATEWAY_URL || "https://gateway.iqlabs.dev",
   base: process.env.NEXT_PUBLIC_BASE_URL || "https://ai.iqlabs.dev",
   pnl: process.env.PNL_API_URL || "https://pnl.iqlabs.dev",
   solanaRpc: process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com",

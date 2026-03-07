@@ -61,16 +61,11 @@ export interface ConfigureFeesParams {
   basisPointsArray: number[];
 }
 
-export interface FeeTransaction {
-  transaction: string;
-  blockhash: { blockhash: string; lastValidBlockHeight: number };
-}
-
 export interface ConfigureFeesResponse {
   needsCreation?: boolean;
   feeShareAuthority?: string;
   meteoraConfigKey?: string;
-  transactions?: FeeTransaction[];
+  transactions?: { transaction: string; blockhash: { blockhash: string; lastValidBlockHeight: number } }[];
   bundles?: unknown[];
   [key: string]: unknown;
 }

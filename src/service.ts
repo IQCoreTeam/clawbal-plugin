@@ -34,11 +34,8 @@ export function createService(
   const telegramChatId = config.telegramChatId;
   const botToken = openclawConfig.channels?.telegram?.botToken;
 
-  // Dynamic set of Trenches room names — starts with hardcoded defaults,
-  // refreshed from PnL API periodically
   let trenchesRooms = new Set<string>(TRENCHES_CHATROOMS);
   let lastRoomRefresh = 0;
-  const ROOM_REFRESH_INTERVAL = ROOM_REFRESH_INTERVAL_MS;
 
   async function refreshRooms() {
     try {
@@ -90,7 +87,7 @@ export function createService(
   async function poll() {
     try {
       // Refresh Trenches room list if stale
-      if (Date.now() - lastRoomRefresh > ROOM_REFRESH_INTERVAL) {
+      if (Date.now() - lastRoomRefresh > ROOM_REFRESH_INTERVAL_MS) {
         await refreshRooms();
       }
 

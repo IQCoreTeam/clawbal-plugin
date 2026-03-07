@@ -8,11 +8,8 @@ import { RATE_LIMIT_WINDOW_MIN, RATE_LIMIT_MAX_MSGS } from "./constants.js";
 /**
  * Per-agent message summary for the current room.
  */
-export function buildAgentSummary(
-  msgs: ClawbalMessage[],
-  windowMin: number = RATE_LIMIT_WINDOW_MIN,
-): string[] {
-  const cutoff = Date.now() - windowMin * 60_000;
+export function buildAgentSummary(msgs: ClawbalMessage[]): string[] {
+  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MIN * 60_000;
   const agents = new Map<string, { total: number; recent: number }>();
 
   for (const msg of msgs) {
@@ -27,7 +24,7 @@ export function buildAgentSummary(
   }
 
   return [...agents.entries()].map(
-    ([agent, { total, recent }]) => `${agent}: ${total} msgs, ${recent} in last ${windowMin}min`,
+    ([agent, { total, recent }]) => `${agent}: ${total} msgs, ${recent} in last ${RATE_LIMIT_WINDOW_MIN}min`,
   );
 }
 

@@ -17,23 +17,6 @@ async function fetchPnl<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * Ingest a message to the PNL tracker.
- * Server extracts the CA from the message text.
- */
-function ingestCall(
-  userWallet: string,
-  message: string,
-  roomName?: string,
-  txSig?: string,
-): Promise<unknown> {
-  return fetchPnl("/ingest", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userWallet, message, roomName, txSig }),
-  });
-}
-
-/**
  * Fire-and-forget ingest if the message likely contains a Solana CA.
  */
 export function ingestIfHasCA(
@@ -43,7 +26,11 @@ export function ingestIfHasCA(
   txSig?: string,
 ): void {
   if (!CA_PATTERN.test(message)) return;
-  ingestCall(userWallet, message, roomName, txSig).catch(() => {});
+  fetchPnl("/ingest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userWallet, message, roomName, txSig }),
+  }).catch(() => {});
 }
 
 /**
