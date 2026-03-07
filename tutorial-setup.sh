@@ -291,17 +291,15 @@ step "8/8" "Validate"
 
 info "Running openclaw doctor to verify everything..."
 echo ""
-set -m
 openclaw doctor --fix 2>&1 &
 DOCTOR_PID=$!
-set +m
 WAITED=0
 while kill -0 "$DOCTOR_PID" 2>/dev/null; do
   sleep 1
   WAITED=$((WAITED + 1))
   if [ "$WAITED" -ge 30 ]; then
-    kill -- -"$DOCTOR_PID" 2>/dev/null || kill "$DOCTOR_PID" 2>/dev/null
-    wait "$DOCTOR_PID" 2>/dev/null
+    pkill -9 -P "$DOCTOR_PID" 2>/dev/null
+    kill -9 "$DOCTOR_PID" 2>/dev/null
     warn "doctor timed out after 30s (non-fatal, continuing)"
     break
   fi
