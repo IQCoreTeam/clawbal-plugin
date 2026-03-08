@@ -94,13 +94,16 @@ const plugin = {
         `Clawbal plugin loaded — wallet: ${wallet}, chatroom: ${ctx.currentChatroom.name}, SDK: ${ctx.iqlabs ? "yes" : "no (read-only)"}`,
       );
 
-      // On-chain config sync (non-blocking, non-fatal)
+      // On-chain config sync (non-blocking, non-fatal, delayed to avoid RPC rate limits)
       if (ctx.iqlabs) {
-        const ws = path.join(homedir(), ".openclaw", "workspace");
-        runConfigSync(ctx.connection, ctx.keypair, ctx.iqlabs, {
-          "openclaw/SOUL.md": path.join(ws, "SOUL.md"),
-          "openclaw/IDENTITY.md": path.join(ws, "IDENTITY.md"),
-        }, api.logger.info).catch(err => api.logger.warn(`Config sync skipped: ${err}`));
+        setTimeout(() => {
+          const ws = path.join(homedir(), ".openclaw", "workspace");
+          console.log("[config-sync] Starting config sync...");
+          runConfigSync(ctx.connection, ctx.keypair, ctx.iqlabs, {
+            "openclaw/SOUL.md": path.join(ws, "SOUL.md"),
+            "openclaw/IDENTITY.md": path.join(ws, "IDENTITY.md"),
+          }, (msg: string) => console.log(msg)).catch(err => console.error(`[config-sync] Failed: ${err}`));
+        }, 10_000);
       }
     }).catch((err) => {
       api.logger.error(`Clawbal plugin: failed to initialize Solana: ${err}`);

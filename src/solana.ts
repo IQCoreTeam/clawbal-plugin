@@ -44,6 +44,12 @@ export async function initSolana(config: PluginConfig): Promise<SolanaContext> {
   try {
     const mod = await import("iqlabs-sdk");
     iqlabs = (mod.default || mod) as unknown as IQLabsSDK;
+    // Tell the SDK to use the same RPC as the plugin
+    if (typeof (mod as any).setRpcUrl === "function") {
+      (mod as any).setRpcUrl(rpcUrl);
+    } else if (typeof (iqlabs as any).setRpcUrl === "function") {
+      (iqlabs as any).setRpcUrl(rpcUrl);
+    }
   } catch {
     // SDK not available — read-only mode via gateway API
   }

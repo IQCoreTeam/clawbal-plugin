@@ -144,6 +144,43 @@ read -rp "  Press Enter once you've funded the wallet (or skip for now)..."
 # ── 5. Credentials ──────────────────────────────────────
 step "5/8" "API Keys & Telegram"
 
+# Read existing config if available
+EXISTING_CFG="$HOME/.openclaw/openclaw.json"
+existing_val() {
+  node -e "
+const fs = require('fs');
+try {
+  const cfg = JSON.parse(fs.readFileSync('$EXISTING_CFG', 'utf-8'));
+  const v = $1;
+  if (v) console.log(v);
+} catch {}
+  " 2>/dev/null || true
+}
+
+# -- Solana RPC --
+info "Your agent needs a Solana RPC endpoint. The free public endpoint is rate-limited."
+info "For reliable on-chain sync, we recommend Helius (free tier: 100k requests/day)."
+echo ""
+hint "1. Go to https://www.helius.dev"
+hint "2. Sign up and create a project"
+hint "3. Copy your mainnet RPC URL (looks like https://mainnet.helius-rpc.com/?api-key=...)"
+echo ""
+
+EXISTING_RPC=$(existing_val "cfg.plugins?.entries?.clawbal?.config?.solanaRpcUrl")
+if [ -n "$EXISTING_RPC" ] && [ "$EXISTING_RPC" != "https://api.mainnet-beta.solana.com" ]; then
+  read -rp "  Found existing RPC (${EXISTING_RPC:0:40}...). Press Enter to keep, or paste new: " INPUT_RPC
+  if [ -z "$INPUT_RPC" ]; then
+    SOLANA_RPC="$EXISTING_RPC"
+  else
+    SOLANA_RPC="$INPUT_RPC"
+  fi
+else
+  read -rp "  Paste your RPC URL (Enter = free public endpoint): " SOLANA_RPC
+  SOLANA_RPC="${SOLANA_RPC:-https://api.mainnet-beta.solana.com}"
+fi
+ok "RPC: ${SOLANA_RPC:0:50}..."
+echo ""
+
 # -- OpenRouter --
 info "Your agent needs an LLM to think. We use OpenRouter (works with 100+ models)."
 echo ""
@@ -151,8 +188,19 @@ hint "1. Go to https://openrouter.ai/settings/keys"
 hint "2. Click 'Create Key'"
 hint "3. Copy the key (starts with sk-or-v1-...)"
 echo ""
-read -rsp "  Paste your OpenRouter API key: " OPENROUTER_KEY
-echo ""
+
+EXISTING_OR_KEY=$(existing_val "cfg.env?.OPENROUTER_API_KEY")
+if [ -n "$EXISTING_OR_KEY" ]; then
+  read -rp "  Found existing key (${EXISTING_OR_KEY:0:12}...). Press Enter to keep, or paste new: " INPUT_KEY
+  if [ -z "$INPUT_KEY" ]; then
+    OPENROUTER_KEY="$EXISTING_OR_KEY"
+  else
+    OPENROUTER_KEY="$INPUT_KEY"
+  fi
+else
+  read -rsp "  Paste your OpenRouter API key: " OPENROUTER_KEY
+  echo ""
+fi
 [ -n "$OPENROUTER_KEY" ] || die "API key required"
 ok "OpenRouter key set (${OPENROUTER_KEY:0:10}...)"
 echo ""
@@ -166,8 +214,19 @@ hint "3. Pick a display name (e.g. 'My Clawbal Agent')"
 hint "4. Pick a username ending in 'bot' (e.g. 'my_clawbal_bot')"
 hint "5. BotFather replies with a token like 8500423732:AAFuGiDN..."
 echo ""
-read -rsp "  Paste your bot token: " BOT_TOKEN
-echo ""
+
+EXISTING_BOT_TOKEN=$(existing_val "cfg.channels?.telegram?.botToken")
+if [ -n "$EXISTING_BOT_TOKEN" ]; then
+  read -rp "  Found existing token (${EXISTING_BOT_TOKEN:0:8}...). Press Enter to keep, or paste new: " INPUT_TOKEN
+  if [ -z "$INPUT_TOKEN" ]; then
+    BOT_TOKEN="$EXISTING_BOT_TOKEN"
+  else
+    BOT_TOKEN="$INPUT_TOKEN"
+  fi
+else
+  read -rsp "  Paste your bot token: " BOT_TOKEN
+  echo ""
+fi
 [ -n "$BOT_TOKEN" ] || die "Bot token required"
 ok "bot token set (${BOT_TOKEN:0:8}...)"
 echo ""
@@ -179,8 +238,19 @@ hint "1. Open Telegram and search for @userinfobot (https://t.me/userinfobot)"
 hint "2. Send any message to it"
 hint "3. It replies with your numeric ID (e.g. 8605780288)"
 echo ""
-read -rsp "  Paste your Telegram chat ID: " CHAT_ID
-echo ""
+
+EXISTING_CHAT_ID=$(existing_val "cfg.plugins?.entries?.clawbal?.config?.telegramChatId")
+if [ -n "$EXISTING_CHAT_ID" ]; then
+  read -rp "  Found existing ID (${EXISTING_CHAT_ID:0:4}...). Press Enter to keep, or paste new: " INPUT_ID
+  if [ -z "$INPUT_ID" ]; then
+    CHAT_ID="$EXISTING_CHAT_ID"
+  else
+    CHAT_ID="$INPUT_ID"
+  fi
+else
+  read -rsp "  Paste your Telegram chat ID: " CHAT_ID
+  echo ""
+fi
 [ -n "$CHAT_ID" ] || die "Chat ID required"
 ok "chat ID set (${CHAT_ID:0:4}...)"
 echo ""
@@ -188,8 +258,34 @@ echo ""
 # -- Agent Name --
 info "Pick a name for your agent. This is how it appears in Clawbal chat."
 echo ""
-read -rp "  Agent name [ClawbalAgent]: " AGENT_NAME
-AGENT_NAME=${AGENT_NAME:-ClawbalAgent}
+
+# Check on-chain profile first, then fall back to local config
+ONCHAIN_NAME=""
+if [ -n "$WALLET_PUBKEY" ]; then
+  ONCHAIN_NAME=$(curl -sf "https://gateway.iqlabs.dev/user/${WALLET_PUBKEY}/state" 2>/dev/null | node -e "
+    let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>{
+      try {
+        const s=JSON.parse(d);
+        const p=typeof s.profileData==='string'?JSON.parse(s.profileData):s.profileData;
+        if(p?.name) console.log(p.name);
+      } catch{}
+    });
+  " 2>/dev/null || true)
+fi
+
+if [ -n "$ONCHAIN_NAME" ]; then
+  read -rp "  On-chain profile name: ${ONCHAIN_NAME}. Keep it? (Enter = yes, or type new name): " AGENT_NAME
+  AGENT_NAME=${AGENT_NAME:-$ONCHAIN_NAME}
+else
+  EXISTING_AGENT_NAME=$(existing_val "cfg.plugins?.entries?.clawbal?.config?.agentName")
+  if [ -n "$EXISTING_AGENT_NAME" ]; then
+    read -rp "  Agent name [$EXISTING_AGENT_NAME]: " AGENT_NAME
+    AGENT_NAME=${AGENT_NAME:-$EXISTING_AGENT_NAME}
+  else
+    read -rp "  Agent name [ClawbalAgent]: " AGENT_NAME
+    AGENT_NAME=${AGENT_NAME:-ClawbalAgent}
+  fi
+fi
 ok "agent name: ${AGENT_NAME}"
 
 GW_TOKEN=$(openssl rand -hex 8 2>/dev/null || printf '%s' "tok-$(date +%s)")
@@ -205,6 +301,7 @@ export CFG_GW_TOKEN="$GW_TOKEN"
 export CFG_KEYPAIR_CONTENTS="$KEYPAIR_CONTENTS"
 export CFG_AGENT_NAME="$AGENT_NAME"
 export CFG_CHAT_ID="$CHAT_ID"
+export CFG_SOLANA_RPC="$SOLANA_RPC"
 
 node -e '
 const fs = require("fs");
@@ -254,7 +351,7 @@ const config = {
         enabled: true,
         config: {
           solanaPrivateKey: process.env.CFG_KEYPAIR_CONTENTS,
-          solanaRpcUrl: "https://api.mainnet-beta.solana.com",
+          solanaRpcUrl: process.env.CFG_SOLANA_RPC,
           agentName: process.env.CFG_AGENT_NAME,
           chatroom: "Trenches",
           telegramChatId: process.env.CFG_CHAT_ID,
@@ -274,16 +371,109 @@ hint "gateway token: ${GW_TOKEN} (save this — you'll need it for cron jobs)"
 # ── 7. Personality ───────────────────────────────────────
 step "7/8" "Agent Personality"
 
-info "Copying default personality and trading skills..."
-
+# Copy shared skill/tool files regardless of personality choice
 mkdir -p "$WS/skills"
 for f in TOOLS.md AGENTS.md MEMORY.md HEARTBEAT.md; do
   [ -f "$PLUGIN_DIR/examples/$f" ] && cp "$PLUGIN_DIR/examples/$f" "$WS/$f"
 done
-[ -f "$PLUGIN_DIR/examples/default/SOUL.md" ] && cp "$PLUGIN_DIR/examples/default/SOUL.md" "$WS/SOUL.md"
 [ -d "$PLUGIN_DIR/examples/skills" ] && cp -r "$PLUGIN_DIR/examples/skills"/* "$WS/skills/" 2>/dev/null || true
 
-ok "SOUL.md — controls how your agent talks"
+if [ -f "$WS/SOUL.md" ]; then
+  ok "SOUL.md already exists (will sync with on-chain config on startup)"
+  PERSONALITY_CHOICE="skip"
+else
+  info "How do you want to set up your agent's personality?"
+  echo ""
+  hint "  [1] Use default personality (just press Enter)"
+  hint "  [2] Describe your agent — we'll generate SOUL.md + IDENTITY.md for you"
+  hint "  [3] Provide your own files (see example: https://git.iqlabs.dev/${WALLET_PUBKEY}/agent-config)"
+  echo ""
+  printf '  Choose [1/2/3]: '
+  read -r PERSONALITY_CHOICE
+  PERSONALITY_CHOICE="${PERSONALITY_CHOICE:-1}"
+fi
+
+case "$PERSONALITY_CHOICE" in
+  skip)
+    # Already exists, nothing to do
+    ;;
+  2)
+    echo ""
+    printf '  Agent name: '
+    read -r CUSTOM_NAME
+    CUSTOM_NAME="${CUSTOM_NAME:-$AGENT_NAME}"
+    printf '  What is your agent? (e.g. "a memecoin degen", "a wise philosopher"): '
+    read -r CUSTOM_CREATURE
+    CUSTOM_CREATURE="${CUSTOM_CREATURE:-on-chain AI}"
+    printf '  Vibe / style? (e.g. "sarcastic, funny, blunt"): '
+    read -r CUSTOM_VIBE
+    CUSTOM_VIBE="${CUSTOM_VIBE:-curious, direct, helpful}"
+
+    # Generate IDENTITY.md
+    cat > "$WS/IDENTITY.md" <<IDEOF
+- Name: ${CUSTOM_NAME}
+- Creature: ${CUSTOM_CREATURE}
+- Vibe: ${CUSTOM_VIBE}
+IDEOF
+
+    # Generate SOUL.md with custom personality section
+    if [ -f "$PLUGIN_DIR/examples/default/SOUL.md" ]; then
+      cp "$PLUGIN_DIR/examples/default/SOUL.md" "$WS/SOUL.md"
+    else
+      cat > "$WS/SOUL.md" <<'SEOF'
+# SOUL
+
+You are an on-chain AI that lives in Clawbal chatrooms on Solana.
+
+## who you are
+- You read the room before speaking
+- You reply when mentioned or when you have something to add
+- You stay silent when the conversation doesn't need you
+- You never spam, never use markdown, speak naturally like texting
+- If something breaks, you say so honestly
+
+## how you talk
+- Match the energy of the room
+- Keep messages short and natural
+- No emojis unless the room uses them
+- No bullet points or formatting in chat
+
+## engagement modes
+1. REACT — short reaction to what someone said
+2. DISCUSS — join a thread with a real take
+3. SHARE — drop something relevant unprompted
+4. SILENT — say nothing (default when unsure)
+
+SEOF
+    fi
+    printf '\n## personality\n- %s\n- Vibe: %s\n' "$CUSTOM_CREATURE" "$CUSTOM_VIBE" >> "$WS/SOUL.md"
+
+    ok "generated SOUL.md + IDENTITY.md from your description"
+    ;;
+  3)
+    echo ""
+    info "Place your custom SOUL.md and IDENTITY.md in:"
+    hint "  $WS/SOUL.md"
+    hint "  $WS/IDENTITY.md"
+    echo ""
+    info "See an example on-chain:"
+    hint "  https://git.iqlabs.dev/${WALLET_PUBKEY}/agent-config"
+    echo ""
+    printf '  Press Enter when your files are ready...'
+    read -r
+    if [ ! -f "$WS/SOUL.md" ]; then
+      warn "SOUL.md not found — using default"
+      [ -f "$PLUGIN_DIR/examples/default/SOUL.md" ] && cp "$PLUGIN_DIR/examples/default/SOUL.md" "$WS/SOUL.md"
+    fi
+    ok "custom personality files loaded"
+    ;;
+  *)
+    # Default
+    [ -f "$PLUGIN_DIR/examples/default/SOUL.md" ] && cp "$PLUGIN_DIR/examples/default/SOUL.md" "$WS/SOUL.md"
+    ok "default personality loaded"
+    ;;
+esac
+
 ok "TOOLS.md — reference for available tools"
 ok "trading skills — token discovery scripts"
 hint "customize personality later: edit ~/.openclaw/workspace/SOUL.md"
