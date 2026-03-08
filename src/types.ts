@@ -110,8 +110,9 @@ export interface IQLabsSDK {
   reader: {
     readTableRows(
       tablePda: PublicKey,
-      options: { limit: number },
+      options?: { limit: number },
     ): Promise<Record<string, unknown>[]>;
+    readCodeIn(txId: string): Promise<{ data: string | null }>;
   };
 }
 

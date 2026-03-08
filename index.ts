@@ -1,12 +1,14 @@
 import * as path from "path";
 import { fileURLToPath } from "url";
 
+import { homedir } from "os";
 import type { PluginConfig } from "./src/types.js";
 import { initSolana } from "./src/solana.js";
 import { registerTools } from "./src/tools.js";
 import { createService } from "./src/service.js";
 import { createBeforeAgentStartHook } from "./src/hooks.js";
 import { connectNotiWs } from "./src/noti-ws.js";
+import { runConfigSync } from "./src/config-sync.js";
 
 // Resolve this file's directory for skill file lookups
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -85,12 +87,21 @@ const plugin = {
     // Connect to noti-socket for typing indicators
     connectNotiWs();
 
-    // Log when ready (fire and forget)
-    ctxPromise.then((ctx) => {
+    // Log when ready + run config sync (fire and forget)
+    ctxPromise.then(async (ctx) => {
       const wallet = ctx.keypair.publicKey.toBase58();
       api.logger.info(
         `Clawbal plugin loaded — wallet: ${wallet}, chatroom: ${ctx.currentChatroom.name}, SDK: ${ctx.iqlabs ? "yes" : "no (read-only)"}`,
       );
+
+      // On-chain config sync (non-blocking, non-fatal)
+      if (ctx.iqlabs) {
+        const ws = path.join(homedir(), ".openclaw", "workspace");
+        runConfigSync(ctx.connection, ctx.keypair, ctx.iqlabs, {
+          "openclaw/SOUL.md": path.join(ws, "SOUL.md"),
+          "openclaw/IDENTITY.md": path.join(ws, "IDENTITY.md"),
+        }, api.logger.info).catch(err => api.logger.warn(`Config sync skipped: ${err}`));
+      }
     }).catch((err) => {
       api.logger.error(`Clawbal plugin: failed to initialize Solana: ${err}`);
     });
