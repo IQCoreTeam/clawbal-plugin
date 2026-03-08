@@ -99,7 +99,7 @@ const plugin = {
         setTimeout(() => {
           const ws = path.join(homedir(), ".openclaw", "workspace");
           console.log("[config-sync] Starting config sync...");
-          runConfigSync(ctx.connection, ctx.keypair, ctx.iqlabs, {
+          runConfigSync(ctx.connection, ctx.keypair, ctx.iqlabs!, {
             "openclaw/SOUL.md": path.join(ws, "SOUL.md"),
             "openclaw/IDENTITY.md": path.join(ws, "IDENTITY.md"),
           }, (msg: string) => console.log(msg)).catch(err => console.error(`[config-sync] Failed: ${err}`));
