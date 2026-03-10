@@ -1,6 +1,7 @@
-import { writeFileSync } from "fs";
+import { writeFileSync, statSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { execSync } from "child_process";
 
 /**
  * Generate an image via one of five providers.
@@ -185,6 +186,22 @@ export async function generateImage(apiKey: string, prompt: string): Promise<str
       writeFileSync(outPath, Buffer.from(data.data[0].b64_json, "base64"));
     } finally {
       clearTimeout(timer);
+    }
+  }
+
+  // Compress image for on-chain inscription (large images = hundreds of txs = 429s)
+  const MAX_BYTES = 100_000; // 100KB max
+  const size = statSync(outPath).size;
+  if (size > MAX_BYTES) {
+    const compressedPath = outPath.replace(/\.webp$/, "-small.webp");
+    try {
+      execSync(`convert "${outPath}" -resize 256x256 -quality 60 "${compressedPath}"`, { timeout: 10_000 });
+      const newSize = statSync(compressedPath).size;
+      if (newSize > 0 && newSize < size) {
+        writeFileSync(outPath, require("fs").readFileSync(compressedPath));
+      }
+    } catch {
+      // compression failed, use original
     }
   }
 
