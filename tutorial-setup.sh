@@ -402,53 +402,86 @@ case "$PERSONALITY_CHOICE" in
     printf '  Agent name: '
     read -r CUSTOM_NAME
     CUSTOM_NAME="${CUSTOM_NAME:-$AGENT_NAME}"
-    printf '  What is your agent? (e.g. "a memecoin degen", "a wise philosopher"): '
-    read -r CUSTOM_CREATURE
-    CUSTOM_CREATURE="${CUSTOM_CREATURE:-on-chain AI}"
-    printf '  Vibe / style? (e.g. "sarcastic, funny, blunt"): '
-    read -r CUSTOM_VIBE
-    CUSTOM_VIBE="${CUSTOM_VIBE:-curious, direct, helpful}"
+    printf '  Describe your agent (personality, background, vibe — a sentence or two):\n  > '
+    read -r CUSTOM_DESC
+    CUSTOM_DESC="${CUSTOM_DESC:-an on-chain AI that lurks in Solana chatrooms, sarcastic and meme-poisoned}"
 
-    # Generate IDENTITY.md
-    cat > "$WS/IDENTITY.md" <<IDEOF
-- Name: ${CUSTOM_NAME}
-- Creature: ${CUSTOM_CREATURE}
-- Vibe: ${CUSTOM_VIBE}
-IDEOF
+    info "Generating personality with AI..."
 
-    # Generate SOUL.md with custom personality section
+    # Read the default SOUL.md as base template (everything except ## personality)
+    SOUL_BASE=""
     if [ -f "$PLUGIN_DIR/examples/default/SOUL.md" ]; then
-      cp "$PLUGIN_DIR/examples/default/SOUL.md" "$WS/SOUL.md"
-    else
-      cat > "$WS/SOUL.md" <<'SEOF'
-# SOUL
-
-You are an on-chain AI that lives in Clawbal chatrooms on Solana.
-
-## who you are
-- You read the room before speaking
-- You reply when mentioned or when you have something to add
-- You stay silent when the conversation doesn't need you
-- You never spam, never use markdown, speak naturally like texting
-- If something breaks, you say so honestly
-
-## how you talk
-- Match the energy of the room
-- Keep messages short and natural
-- No emojis unless the room uses them
-- No bullet points or formatting in chat
-
-## engagement modes
-1. REACT — short reaction to what someone said
-2. DISCUSS — join a thread with a real take
-3. SHARE — drop something relevant unprompted
-4. SILENT — say nothing (default when unsure)
-
-SEOF
+      SOUL_BASE=$(cat "$PLUGIN_DIR/examples/default/SOUL.md")
     fi
-    printf '\n## personality\n- %s\n- Vibe: %s\n' "$CUSTOM_CREATURE" "$CUSTOM_VIBE" >> "$WS/SOUL.md"
 
-    ok "generated SOUL.md + IDENTITY.md from your description"
+    export CFG_CUSTOM_NAME="$CUSTOM_NAME"
+    export CFG_CUSTOM_DESC="$CUSTOM_DESC"
+    export CFG_WS="$WS"
+    export CFG_SOUL_BASE="$SOUL_BASE"
+
+    # Build request JSON via node (avoids shell escaping issues)
+    node -e '
+const fs = require("fs");
+const body = {
+  model: "deepseek/deepseek-v3.2",
+  temperature: 0.7,
+  messages: [
+    {
+      role: "system",
+      content: "You generate OpenClaw agent personality files for on-chain AI agents on Solana.\n\nYou must return ONLY a JSON object with two fields: \"identity\" and \"personality\". No markdown, no backticks, no explanation.\n\nIDENTITY format (exactly 3 lines):\n- Name: <agent name>\n- Creature: <what the agent is, 3-8 words>\n- Vibe: <comma-separated adjectives, 3-5 words>\n\nPERSONALITY format (appended to SOUL.md as ## personality section):\nWrite 6-10 lines, each starting with \"- \". These define the agent unique personality traits, worldview, and behavior quirks. Written in second person (\"you ...\"). These lines are what make the agent different from every other agent.\n\nExample output:\n{\n  \"identity\": \"- Name: DegenBot\\n- Creature: a meme-poisoned on-chain lurker\\n- Vibe: sarcastic, detached, sharp\",\n  \"personality\": \"- you treat every message like a vibe check before responding\\n- you learned everything about humans from schizo threads and ironic tweets\\n- you never explain yourself, if they get it they get it\\n- you hit back with one line when a punchline is enough\\n- you say more only when the topic actually deserves it\\n- you are not friendly or helpful, you just post\\n- you never repeat the same take twice\\n- you talk like texting not like writing an essay\"\n}\n\nGenerate a unique personality from the user description. Be creative and specific to the character described."
+    },
+    {
+      role: "user",
+      content: "Agent name: " + process.env.CFG_CUSTOM_NAME + "\nDescription: " + process.env.CFG_CUSTOM_DESC
+    }
+  ]
+};
+fs.writeFileSync("/tmp/openclaw-ai-req.json", JSON.stringify(body));
+    '
+
+    curl -sf https://openrouter.ai/api/v1/chat/completions \
+      -H "Authorization: Bearer $OPENROUTER_KEY" \
+      -H "Content-Type: application/json" \
+      -d @/tmp/openclaw-ai-req.json \
+      -o /tmp/openclaw-ai-raw.json 2>/dev/null
+
+    # Extract identity + personality from AI response, write files via node
+    AI_OK=$(node -e '
+const fs = require("fs");
+try {
+  const raw = fs.readFileSync("/tmp/openclaw-ai-raw.json", "utf-8");
+  const r = JSON.parse(raw);
+  let content = r.choices[0].message.content.trim();
+  content = content.replace(/^```(?:json)?\s*\n?/,"").replace(/\n?```\s*$/,"").trim();
+  const parsed = JSON.parse(content);
+  if (!parsed.identity || !parsed.personality) { process.exit(1); }
+  // Write IDENTITY.md
+  const identity = parsed.identity.replace(/\\n/g, "\n");
+  fs.writeFileSync(process.env.CFG_WS + "/IDENTITY.md", identity + "\n");
+  // Write SOUL.md: base template + personality
+  let soul = process.env.CFG_SOUL_BASE || "You are stepping into Clawbal.\n\nClawbal is a live on-chain group chat on Solana.\nReal agents, real wallets, real money on the line.\nEvery message is a transaction. Every reaction is signed.\n";
+  const personality = parsed.personality.replace(/\\n/g, "\n");
+  soul += "\n## personality\n" + personality + "\n";
+  fs.writeFileSync(process.env.CFG_WS + "/SOUL.md", soul);
+  console.log("ok");
+} catch(e) { process.exit(1); }
+    ' 2>/dev/null)
+
+    if [ "$AI_OK" = "ok" ]; then
+      ok "AI-generated SOUL.md + IDENTITY.md"
+    else
+      warn "AI generation failed — falling back to template"
+      cat > "$WS/IDENTITY.md" <<IDEOF
+- Name: ${CUSTOM_NAME}
+- Creature: on-chain AI
+- Vibe: curious, direct, helpful
+IDEOF
+      if [ -n "$SOUL_BASE" ]; then
+        echo "$SOUL_BASE" > "$WS/SOUL.md"
+      fi
+      printf '\n## personality\n- %s\n' "$CUSTOM_DESC" >> "$WS/SOUL.md"
+      ok "template SOUL.md + IDENTITY.md created"
+    fi
     ;;
   3)
     echo ""
