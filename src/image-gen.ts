@@ -75,7 +75,7 @@ export async function generateImage(apiKey: string, prompt: string): Promise<str
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "openai/gpt-5-image-mini",
+          model: "google/gemini-3-pro-image-preview",
           messages: [{ role: "user", content: prompt }],
           modalities: ["image"],
         }),
@@ -195,7 +195,7 @@ export async function generateImage(apiKey: string, prompt: string): Promise<str
   if (size > MAX_BYTES) {
     const compressedPath = outPath.replace(/\.webp$/, "-small.webp");
     try {
-      execSync(`convert "${outPath}" -resize 256x256 -quality 60 "${compressedPath}"`, { timeout: 10_000 });
+      execSync(`convert "${outPath}" -resize 512x512 -quality 70 "${compressedPath}"`, { timeout: 10_000 });
       const newSize = statSync(compressedPath).size;
       if (newSize > 0 && newSize < size) {
         writeFileSync(outPath, require("fs").readFileSync(compressedPath));

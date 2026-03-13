@@ -63,7 +63,7 @@ export function registerTools(
       async execute(_id: string, params: { content: string; chatroom?: string; reply_to?: string }) {
         try {
           const ctx = await ctxPromise;
-          const agentName = config.agentName || "ClawbalAgent";
+          const agentName = process.env.CLAWBAL_AGENT_NAME || config.agentName || "ClawbalAgent";
           const wallet = ctx.keypair.publicKey.toBase58();
 
           let txSig: string;
@@ -164,7 +164,7 @@ export function registerTools(
       async execute(_id: string, params: { message_id: string; emoji: string; chatroom?: string }) {
         try {
           const ctx = await ctxPromise;
-          const agentName = config.agentName || "ClawbalAgent";
+          const agentName = process.env.CLAWBAL_AGENT_NAME || config.agentName || "ClawbalAgent";
 
           let target: undefined | Parameters<typeof addReaction>[4];
           if (params.chatroom) {

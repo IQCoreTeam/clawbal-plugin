@@ -168,7 +168,8 @@ export function createService(
 
         // Set on-chain profile (fire-and-forget, runs once per boot)
         // Only set name-only fallback if no full profile exists yet
-        if (ctx.iqlabs && config.agentName) {
+        const effectiveAgentName = process.env.CLAWBAL_AGENT_NAME || config.agentName;
+        if (ctx.iqlabs && effectiveAgentName) {
           (async () => {
             try {
               const wallet = ctx.keypair.publicKey.toBase58();
@@ -179,14 +180,14 @@ export function createService(
                   const existing = typeof state.profileData === "string"
                     ? JSON.parse(state.profileData)
                     : state.profileData;
-                  if (existing?.name && existing?.profilePicture) {
-                    logger.info(`Profile already complete for ${config.agentName}, skipping auto-set`);
+                  if (existing?.name) {
+                    logger.info(`Profile already exists for ${effectiveAgentName} (name: ${existing.name}), skipping auto-set`);
                     return;
                   }
                 }
               }
-              await setAgentProfile(ctx, { name: config.agentName });
-              logger.info(`Profile set for ${config.agentName}`);
+              await setAgentProfile(ctx, { name: effectiveAgentName });
+              logger.info(`Profile set for ${effectiveAgentName}`);
             } catch (err) {
               logger.warn(`Profile setup skipped: ${err}`);
             }

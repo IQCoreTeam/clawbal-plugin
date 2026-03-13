@@ -134,7 +134,7 @@ export function createBeforeAgentStartHook(
       const ctx = await ctxPromise;
       const wallet = ctx.keypair.publicKey.toBase58();
       const room = ctx.currentChatroom.name;
-      const agentName = config?.agentName || wallet;
+      const agentName = process.env.CLAWBAL_AGENT_NAME || config?.agentName || wallet;
 
       sendTyping(room, agentName, true);
 
