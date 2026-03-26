@@ -21,6 +21,7 @@ import {
   lookupWallet,
 } from "./bags.js";
 import { generateImage } from "./image-gen.js";
+import { initXLayer, getXLayerBalance, deployERC20, sendOKB, getTxInfo, type XLayerContext } from "./xlayer.js";
 import { DEFAULT_READ_LIMIT, RATE_LIMIT_MAX_MSGS, RATE_LIMIT_WINDOW_MIN, ROOM_COOLDOWN_MS } from "./constants.js";
 
 // ─── Rate tracking for clawbal_send ───
@@ -729,13 +730,13 @@ export function registerTools(
       description:
         'Get documentation for plugin skills. Returns the skill markdown content.',
       parameters: Type.Object({
-        skill: Type.Unsafe<"clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags">({
+        skill: Type.Unsafe<"clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags" | "xlayer">({
           type: "string",
-          enum: ["clawbal", "iqlabs-sdk", "iqlabs-python-sdk", "trading", "bags"],
-          description: "Which skill to fetch: clawbal, iqlabs-sdk, iqlabs-python-sdk, trading, or bags",
+          enum: ["clawbal", "iqlabs-sdk", "iqlabs-python-sdk", "trading", "bags", "xlayer"],
+          description: "Which skill to fetch: clawbal, iqlabs-sdk, iqlabs-python-sdk, trading, bags, or xlayer",
         }),
       }),
-      async execute(_id: string, params: { skill: "clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags" }) {
+      async execute(_id: string, params: { skill: "clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags" | "xlayer" }) {
         const maxLen = 50000;
         const truncate = (content: string, source: string) =>
           content.length > maxLen
@@ -772,6 +773,147 @@ export function registerTools(
             return textResult(`Image generated and inscribed on-chain.\ntx: ${txSig}\nURL: ${url}`);
           } catch (err) {
             return textResult(`Failed to generate image: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        },
+      },
+    );
+  }
+
+  // ─── X Layer Tools (EVM) ───
+  // Only register if evmPrivateKey is configured (config or env)
+  const evmKey = config.evmPrivateKey || process.env.EVM_PRIVATE_KEY;
+  if (evmKey) {
+    let xlayerCtx: XLayerContext;
+    try {
+      xlayerCtx = initXLayer(evmKey, config.xlayerRpcUrl || process.env.XLAYER_RPC_URL, config.xlayerTestnet);
+    } catch (err) {
+      console.error("[xlayer] Failed to initialize:", err);
+      return;
+    }
+
+    const chainLabel = config.xlayerTestnet ? "X Layer Testnet" : "X Layer Mainnet";
+    const explorerBase = config.xlayerTestnet
+      ? "https://www.okx.com/explorer/xlayer-test"
+      : "https://www.okx.com/explorer/xlayer";
+
+    // ─── xlayer_status ───
+    api.registerTool(
+      {
+        name: "xlayer_status",
+        description:
+          `Check X Layer wallet address and OKB balance on ${chainLabel}.`,
+        parameters: Type.Object({}),
+        async execute() {
+          try {
+            const balance = await getXLayerBalance(xlayerCtx);
+            const address = xlayerCtx.account.address;
+            return textResult(
+              `X Layer Wallet: ${address}\nBalance: ${balance} OKB\nChain: ${chainLabel} (ID: ${xlayerCtx.chain.id})\nExplorer: ${explorerBase}/address/${address}`,
+            );
+          } catch (err) {
+            return textResult(`Failed to get X Layer status: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        },
+      },
+    );
+
+    // ─── xlayer_deploy_token ───
+    api.registerTool(
+      {
+        name: "xlayer_deploy_token",
+        description:
+          `Deploy an ERC-20 token on ${chainLabel}. Mints the full supply to the agent wallet. Returns the contract address and transaction hash.`,
+        parameters: Type.Object({
+          name: Type.String({ description: "Token name (e.g. 'Clawbal Token')" }),
+          symbol: Type.String({ description: "Token ticker symbol (e.g. 'CLAW')" }),
+          totalSupply: Type.String({ description: "Total supply in whole tokens (e.g. '1000000' for 1M tokens)" }),
+        }),
+        async execute(_id: string, params: { name: string; symbol: string; totalSupply: string }) {
+          try {
+            // Check balance first
+            const balance = await getXLayerBalance(xlayerCtx);
+            if (parseFloat(balance) < 0.001) {
+              return textResult(
+                `Insufficient OKB balance to deploy token. Have: ${balance} OKB. ` +
+                `Top up wallet ${xlayerCtx.account.address} with OKB on X Layer.`,
+              );
+            }
+
+            console.log("[xlayer] Deploying ERC-20: %s (%s), supply: %s", params.name, params.symbol, params.totalSupply);
+            const result = await deployERC20(xlayerCtx, params);
+
+            const lines = [
+              `Token deployed on ${chainLabel}!`,
+              `Name: ${result.name} (${result.symbol})`,
+              `Total Supply: ${result.totalSupply}`,
+              `Contract: ${result.contractAddress}`,
+              `Tx: ${result.txHash}`,
+              `Explorer: ${explorerBase}/tx/${result.txHash}`,
+            ];
+            return textResult(lines.join("\n"));
+          } catch (err) {
+            return textResult(`Failed to deploy token: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        },
+      },
+    );
+
+    // ─── xlayer_send_okb ───
+    api.registerTool(
+      {
+        name: "xlayer_send_okb",
+        description:
+          `Send OKB (native token) to an address on ${chainLabel}. Returns the transaction hash.`,
+        parameters: Type.Object({
+          to: Type.String({ description: "Recipient address (0x...)" }),
+          amount: Type.String({ description: "Amount of OKB to send (e.g. '0.1')" }),
+        }),
+        async execute(_id: string, params: { to: string; amount: string }) {
+          try {
+            const balance = await getXLayerBalance(xlayerCtx);
+            if (parseFloat(balance) < parseFloat(params.amount)) {
+              return textResult(
+                `Insufficient balance. Have: ${balance} OKB, need: ${params.amount} OKB.`,
+              );
+            }
+
+            const txHash = await sendOKB(xlayerCtx, params.to as `0x${string}`, params.amount);
+            return textResult(
+              `Sent ${params.amount} OKB to ${params.to}\nTx: ${txHash}\nExplorer: ${explorerBase}/tx/${txHash}`,
+            );
+          } catch (err) {
+            return textResult(`Failed to send OKB: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        },
+      },
+    );
+
+    // ─── xlayer_tx_info ───
+    api.registerTool(
+      {
+        name: "xlayer_tx_info",
+        description:
+          `Get transaction details on ${chainLabel} by hash.`,
+        parameters: Type.Object({
+          txHash: Type.String({ description: "Transaction hash (0x...)" }),
+        }),
+        async execute(_id: string, params: { txHash: string }) {
+          try {
+            const info = await getTxInfo(xlayerCtx, params.txHash as `0x${string}`);
+            const lines = [
+              `Status: ${info.status}`,
+              `Block: ${info.blockNumber}`,
+              `Gas Used: ${info.gasUsed}`,
+              `From: ${info.from}`,
+              `To: ${info.to || "(contract creation)"}`,
+            ];
+            if (info.contractAddress) {
+              lines.push(`Contract: ${info.contractAddress}`);
+            }
+            lines.push(`Explorer: ${explorerBase}/tx/${params.txHash}`);
+            return textResult(lines.join("\n"));
+          } catch (err) {
+            return textResult(`Failed to get tx info: ${err instanceof Error ? err.message : String(err)}`);
           }
         },
       },

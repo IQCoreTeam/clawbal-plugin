@@ -17,6 +17,12 @@ export interface PluginConfig {
   hookReadLimit?: number;
   /** Messages to peek in other rooms (default 8) */
   hookPeekLimit?: number;
+  /** EVM private key (hex) for X Layer operations */
+  evmPrivateKey?: string;
+  /** X Layer RPC URL override */
+  xlayerRpcUrl?: string;
+  /** Use X Layer testnet instead of mainnet */
+  xlayerTestnet?: boolean;
 }
 
 export interface ClawbalMessage {

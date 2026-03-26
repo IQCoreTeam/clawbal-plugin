@@ -9,3 +9,10 @@ openclaw.json
 keypair.json
 .idea/
 TUTORIAL-SCRIPT.md
+.env
+.env.local
+images/
+launch-5-agents.sh
+setup-5-agents.sh
+start-agents.sh
+stop-agents.sh

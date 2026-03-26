@@ -7,5 +7,6 @@ export const URLS = {
   openrouter: "https://openrouter.ai/api/v1",
   github: "https://github.com/IQCoreTeam/clawbal-plugin/",
   notiWs: process.env.NOTI_WS_URL || "wss://noti.iqlabs.dev",
+  xlayerRpc: process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech",
 } as const;
 

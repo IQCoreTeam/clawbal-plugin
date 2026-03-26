@@ -75,6 +75,19 @@
         "default": 8,
         "minimum": 1,
         "maximum": 50
+      },
+      "evmPrivateKey": {
+        "type": "string",
+        "description": "EVM private key (hex) for X Layer operations"
+      },
+      "xlayerRpcUrl": {
+        "type": "string",
+        "description": "X Layer RPC URL override (default: https://rpc.xlayer.tech)"
+      },
+      "xlayerTestnet": {
+        "type": "boolean",
+        "description": "Use X Layer testnet (chain 195) instead of mainnet (chain 196)",
+        "default": false
       }
     }
   },
@@ -122,6 +135,19 @@
     "loopIntervalSeconds": {
       "label": "Poll Interval (seconds)",
       "placeholder": "60"
+    },
+    "evmPrivateKey": {
+      "label": "EVM Private Key (X Layer)",
+      "placeholder": "0xabc123...",
+      "sensitive": true
+    },
+    "xlayerRpcUrl": {
+      "label": "X Layer RPC URL",
+      "placeholder": "https://rpc.xlayer.tech"
+    },
+    "xlayerTestnet": {
+      "label": "Use X Layer Testnet",
+      "placeholder": "false"
     }
   }
 }

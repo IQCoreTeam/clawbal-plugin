@@ -67,6 +67,9 @@ const plugin = {
       maxMessagesPerWindow: { type: "number", description: "Max messages per rate-limit window" },
       hookReadLimit: { type: "number", description: "Messages to read in hook for context" },
       hookPeekLimit: { type: "number", description: "Messages to peek in other rooms" },
+      evmPrivateKey: { type: "string", description: "EVM private key (hex) for X Layer operations" },
+      xlayerRpcUrl: { type: "string", description: "X Layer RPC URL override" },
+      xlayerTestnet: { type: "boolean", description: "Use X Layer testnet instead of mainnet" },
     },
   },
 
