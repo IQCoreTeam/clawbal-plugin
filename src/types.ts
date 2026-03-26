@@ -106,6 +106,18 @@ export interface IQLabsSDK {
       dbRootId: Buffer | Uint8Array | string,
       meta: Buffer | Uint8Array | string,
     ): Promise<string>;
+    createTable(
+      connection: Connection,
+      signer: Keypair,
+      dbRootId: string | Buffer,
+      tableSeed: string | Buffer,
+      tableName: string | Buffer,
+      columnNames: (string | Buffer)[],
+      idCol: string | Buffer,
+      extKeys: (string | Buffer)[],
+      gate: unknown | null,
+      writers: unknown[] | null,
+    ): Promise<string>;
   };
   reader: {
     readTableRows(
