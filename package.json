@@ -15,6 +15,7 @@
     "bs58": "^6.0.0",
     "iqlabs-sdk": "npm:@iqlabs-official/solana-sdk@^0.1.8",
     "nanoid": "^5.0.7",
+    "onchainos-skills": "github:okx/onchainos-skills",
     "viem": "^2.47.6"
   },
   "devDependencies": {

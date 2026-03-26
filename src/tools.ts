@@ -730,13 +730,13 @@ export function registerTools(
       description:
         'Get documentation for plugin skills. Returns the skill markdown content.',
       parameters: Type.Object({
-        skill: Type.Unsafe<"clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags" | "xlayer">({
+        skill: Type.Unsafe<"clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags" | "xlayer" | "okx-dex-market">({
           type: "string",
-          enum: ["clawbal", "iqlabs-sdk", "iqlabs-python-sdk", "trading", "bags", "xlayer"],
-          description: "Which skill to fetch: clawbal, iqlabs-sdk, iqlabs-python-sdk, trading, bags, or xlayer",
+          enum: ["clawbal", "iqlabs-sdk", "iqlabs-python-sdk", "trading", "bags", "xlayer", "okx-dex-market"],
+          description: "Which skill to fetch: clawbal, iqlabs-sdk, iqlabs-python-sdk, trading, bags, xlayer, or okx-dex-market",
         }),
       }),
-      async execute(_id: string, params: { skill: "clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags" | "xlayer" }) {
+      async execute(_id: string, params: { skill: "clawbal" | "iqlabs-sdk" | "iqlabs-python-sdk" | "trading" | "bags" | "xlayer" | "okx-dex-market" }) {
         const maxLen = 50000;
         const truncate = (content: string, source: string) =>
           content.length > maxLen
