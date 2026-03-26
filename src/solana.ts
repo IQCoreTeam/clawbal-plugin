@@ -431,31 +431,19 @@ export async function createChatroomOnChain(
     return { chatroom, txSig: "(already exists)" };
   }
 
-  // Load IDL for instruction building
-  const require = createRequire(import.meta.url);
-  const idl = require("iqlabs-sdk/idl/code_in.json");
-  const builder = ctx.iqlabs.contract.createInstructionBuilder(idl, programId);
-
-  const ix = ctx.iqlabs.contract.createTableInstruction(builder, {
-    db_root: dbRootPda,
-    receiver: ctx.keypair.publicKey,
-    signer: ctx.keypair.publicKey,
-    table: tablePda,
-    instruction_table: instructionTablePda,
-    system_program: SystemProgram.programId,
-  }, {
-    db_root_id: Buffer.from(dbRootId),
-    table_seed: Buffer.from(tableSeed),
-    table_name: Buffer.from(`${CHATROOM_PREFIX}${name}`),
-    column_names: MESSAGE_COLUMNS.map(c => Buffer.from(c)),
-    id_col: Buffer.from("id"),
-    ext_keys: [],
-    gate_mint_opt: null,
-    writers_opt: null,
-  });
-
-  const tx = new Transaction().add(ix);
-  const txSig = await sendAndConfirmTransaction(ctx.connection, tx, [ctx.keypair]);
+  // Use SDK's high-level createTable — pass pre-hashed Buffers so SDK skips keccak (db_root was created with sha256)
+  const txSig = await ctx.iqlabs.writer.createTable(
+    ctx.connection,
+    ctx.keypair,
+    dbRootId,
+    tableSeed,
+    `${CHATROOM_PREFIX}${name}`,
+    MESSAGE_COLUMNS,
+    "id",
+    [],
+    null,
+    null,
+  );
 
   // Create metadata table for this room
   try {
@@ -509,32 +497,19 @@ async function ensureRoomMetadataTable(ctx: SolanaContext, roomName: string): Pr
   const tableInfo = await ctx.connection.getAccountInfo(tablePda);
   if (tableInfo) return;
 
-  const instructionTablePda = ctx.iqlabs.contract.getInstructionTablePda(dbRootPda, tableSeed, programId);
-
-  const require = createRequire(import.meta.url);
-  const idl = require("iqlabs-sdk/idl/code_in.json");
-  const builder = ctx.iqlabs.contract.createInstructionBuilder(idl, programId);
-
-  const ix = ctx.iqlabs.contract.createTableInstruction(builder, {
-    db_root: dbRootPda,
-    receiver: ctx.keypair.publicKey,
-    signer: ctx.keypair.publicKey,
-    table: tablePda,
-    instruction_table: instructionTablePda,
-    system_program: SystemProgram.programId,
-  }, {
-    db_root_id: Buffer.from(dbRootId),
-    table_seed: Buffer.from(tableSeed),
-    table_name: Buffer.from(metaTableName),
-    column_names: METADATA_COLUMNS.map(c => Buffer.from(c)),
-    id_col: Buffer.from("name"),
-    ext_keys: [],
-    gate_mint_opt: null,
-    writers_opt: null,
-  });
-
-  const tx = new Transaction().add(ix);
-  await sendAndConfirmTransaction(ctx.connection, tx, [ctx.keypair]);
+  // Use SDK's high-level createTable — pass pre-hashed Buffers (db_root uses sha256, not keccak)
+  await ctx.iqlabs.writer.createTable(
+    ctx.connection,
+    ctx.keypair,
+    dbRootId,
+    tableSeed,
+    metaTableName,
+    METADATA_COLUMNS,
+    "name",
+    [],
+    null,
+    null,
+  );
 }
 
 /**
