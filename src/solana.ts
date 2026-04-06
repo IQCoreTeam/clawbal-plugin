@@ -443,6 +443,7 @@ export async function createChatroomOnChain(
     [],
     null,
     null,
+    `chatroom:${name}`,
   );
 
   // Create metadata table for this room
@@ -509,6 +510,7 @@ async function ensureRoomMetadataTable(ctx: SolanaContext, roomName: string): Pr
     [],
     null,
     null,
+    metaTableName,
   );
 }
 
