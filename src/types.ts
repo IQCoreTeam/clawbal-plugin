@@ -115,8 +115,8 @@ export interface IQLabsSDK {
       columnNames: (string | Buffer)[],
       idCol: string | Buffer,
       extKeys: (string | Buffer)[],
-      gate: unknown | null,
-      writers: unknown[] | null,
+      gate?: unknown | null,
+      writers?: unknown[] | null,
       tableHint?: string | Buffer,
     ): Promise<string>;
   };
